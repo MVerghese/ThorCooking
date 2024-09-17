@@ -263,7 +263,7 @@ class CookingEnv:
             if not obj_found:
                 print("Error object not found")
                 return False
-            event = self.controller.step(action=action, objectId=obj_id, forceAction = True, manualInteract=False)
+            event = self.controller.step(action=action, objectId=obj_id, forceAction = True)
             return event.metadata["lastActionSuccess"]
         else:
             raise NotImplementedError
@@ -365,6 +365,31 @@ class CookingEnv:
         else:
             raise NotImplementedError
 
+    def check_success(self,success_dict):
+        objects = self.controller.last_event.metadata["objects"]
+
+    def generate_language_predicates(self):
+        objects = self.controller.last_event.metadata["objects"]
+        predicates = []
+        for obj in objects:
+            if obj["isPickedUp"]:
+                predicates.append("currently holding {}".format(obj["objectType"]))
+            if obj["isCooked"]:
+                predicates.append("{} is cooked".format(obj["objectType"]))
+            if obj["isSliced"]:
+                predicates.append("{} is sliced".format(obj["objectType"]))
+            if obj["isToggled"]:
+                predicates.append("{} is on".format(obj["objectType"]))
+            if obj["isBroken"]:
+                predicates.append("{} is broken".format(obj["objectType"]))
+            if obj["isOpen"]:
+                predicates.append("{} is open".format(obj["objectType"]))
+            if obj in self.receptacles and len(obj["receptacleObjectIds"]) > 0:
+                receptacle_object_types = [objectID.split("|")[0] for objectID in obj["receptacleObjectIds"]]
+                predicates.append("{} contains: {}".format(obj["objectType"], ", ".join(receptacle_object_types)))
+        return predicates
+
+
     def step(self,action):
         success = self.parse_action(action)
         objects = self.controller.last_event.metadata["objects"]
@@ -409,7 +434,17 @@ def main():
     # print("Make a Latte valid scenes: ",valid_scenes)
     # 1/0
     env = CookingEnv()
-    print(env.get_all_object_types())
+    print(env.generate_language_predicates())
+    valid_actions = env.generate_possible_actions()
+    for action in valid_actions:
+        if action["action"] == "OpenObject" and action["objectType"] == "Cabinet":
+            selected_action = action
+            break
+    success, _, _ = env.step(selected_action)
+    print(success)
+    print(env.generate_language_predicates())
+    # print(env.get_all_object_types())
+
     1/0
     for obj in env.controller.last_event.metadata["objects"]:
         print(obj["objectType"], obj["objectId"])
