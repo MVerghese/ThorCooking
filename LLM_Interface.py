@@ -6,11 +6,11 @@ import threading
 
 import torch
 import transformers
-from accelerate import infer_auto_device_map
+from accelerate import infer_auto_device_map, disk_offload
 import numpy as np
 
 from typing import Dict, List
-import cv2
+# import cv2
 
 
 class Trie(object):
@@ -145,10 +145,10 @@ class transformers_interface:
 		self.cuda_devices = cuda_devices
 		self.tokenizer = transformers.AutoTokenizer.from_pretrained(
 			model_name,
-			add_bos_token=False,
-			add_eos_token=False,
-			use_fast=False,
-			padding_side='left',
+			# add_bos_token=False,
+			# add_eos_token=False,
+			# use_fast=False,
+			# padding_side='left',
 		)
 		# self.tokenizer.add_special_tokens(
 		#     {"bos_token": "<s>", "eos_token": "</s>", "pad_token": "<pad>"},
@@ -163,19 +163,19 @@ class transformers_interface:
 				mem_map[i] = "0GiB"
 
 		# IF YOU ARE RUNNING A 70B MODEL, YOU NEED TO CHANGE THIS TO A FOLDER IN YOUR PRIVATE SPACE (and make sure the folder exists)
-		save_dir = "/private/home/mverghese/LLM_MM_aligner/experiments/mrinal/llama2_cache"
+		save_dir = "/home/atkesonlab2/models/cache"
 		# try:
 		#     os.mkdir(save_dir)
 		# except FileExistsError:
 		#     pass
 		self.model = transformers.AutoModelForCausalLM.from_pretrained(
-			model_name, low_cpu_mem_usage=True, device_map="balanced", max_memory=mem_map, offload_folder=save_dir, torch_dtype=torch.float16
+			model_name, low_cpu_mem_usage=True, device_map="auto", offload_folder=save_dir, torch_dtype=torch.bfloat16
 		)
 		self.model.eval()
 		self.model.half()
 
-		self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-		self.model.resize_token_embeddings(self.model.config.vocab_size + 1)
+		# self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+		# self.model.resize_token_embeddings(self.model.config.vocab_size + 1)
 
 	def get_num_tokens(self, prompt):
 		assert isinstance(prompt, str)
@@ -526,8 +526,15 @@ if __name__ == "__main__":
 	# # print("Queries: ", queries)
 	# # query_probs = interface.eval_log_probs_old(prompt, queries, verbose = True)
 	# # print(query_probs)
-	LLAMA_PATH = "/home/mverghese/models/Llama-3-8b-hf/"
+	LLAMA_PATH = "/home/atkesonlab2/models/llama-3-8b-quantized/"
+	LLAMA_PATH = "SweatyCrayfish/llama-3-8b-quantized"
+	LLAMA_PATH = "/home/atkesonlab2/models/gemma-2-2b-it"
 	llm = transformers_interface(LLAMA_PATH,cuda_devices = [0])
 	queries = ["One plus one is two", "Good morning", "Hello, how are you?"]
-	batch = llm.to_tokens_and_logprobs(queries)
-	print(batch)
+	prompt = "what is the sum of one and one"
+	query_probs = llm.eval_log_probs(prompt, queries)
+	llm.generate_choice
+	print(query_probs)
+	# batch = llm.to_tokens_and_logprobs(queries)
+	# print(batch)
+	# print(llm.generate("this is a test", num_tokens = 50))
