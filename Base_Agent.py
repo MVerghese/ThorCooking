@@ -78,23 +78,23 @@ class Base_Agent:
 		actions: List[Dict] - potential actions to take
 	Output: str - most likely next action
 	'''
-	def generate_next_action(self, prompt:str, predicates: List[str], actions: List[Dict], action_history: List[Dict]) -> str:
+	def generate_next_action(self, prompt:str, predicates: List[str], actions: List[Dict], action_history: List[str]) -> str:
 		final_prompt = "Here is the task you are assigned to complete: " + prompt + "\nHere is the current state of the environment:\n"
 		for predicate in predicates:
 			final_prompt += predicate + "\n"
 
 		final_prompt += "Here is your action history:\n"
 		for act in action_history:
-			final_prompt += act["action"]  + " " + act["objectType"] + "\n"
+			final_prompt += act + "\n"
 
-		final_prompt += "Based on the previous information, determine the next action needed to complete the task. If you are done with the task, respond with \"done\""
+		final_prompt += "Based on the previous information, determine the next action needed to complete the task. Do not repeat actions."
+		#  If you are done with the task, respond with \"done\"
 		actions_list = []
 		for act in actions:
-			actions_list.append(act["action"]  + " " + act["objectType"])
+			actions_list.append(act["action"].replace("Object", " " + act["objectType"] + " ").lower())
 
 		actions_list.append("done")
-
-		# print(final_prompt)
+		print(final_prompt)
 		# print(actions_list)
 		
 		action_probabilities = self.llm.eval_log_probs(final_prompt, actions_list, batch_size=1)
@@ -107,11 +107,17 @@ class Base_Agent:
 def test_generate_next_action_blt():
 	agent = Base_Agent(load_llm=True, load_narrator=False)
 	env = CookingEnv()
+	with open('Tasks/Make_A_BLT_0.json') as json_file:
+		task_dict = json.load(json_file)
+	env.load_task_state(task_dict, 8)
 	action_history = []
+
+	for i in range(9):
+		action_history.append(task_dict["action_segments"][i]["action_text"])
 
 	def filter_by_object(pred):
 		pred = pred.lower()
-		return "bacon" in pred or "lettuce" in pred or "tomato" in pred or "bread" in pred or "knife" in pred
+		return "bacon" in pred or "lettuce" in pred or "tomato" in pred or "bread" in pred or "knife" in pred or "plate" in pred
 	
 	prompt = "Make a BLT"
 
@@ -122,9 +128,10 @@ def test_generate_next_action_blt():
 	filtered_predicates = list(filter(filter_by_object, predicates))
 
 	next_action = agent.generate_next_action(prompt, filtered_predicates, filtered_actions, action_history)
-	action_history.append(next_action)
+	
 	if (next_action is None):
 		return
+	action_history.append(next_action["action"].replace("Object", " " + next_action["objectType"] + " ").lower())
 	print(next_action)
 
 	for _ in range(5):
@@ -136,10 +143,10 @@ def test_generate_next_action_blt():
 		filtered_predicates = list(filter(filter_by_object, predicates))
 
 		next_action = agent.generate_next_action(prompt, filtered_predicates, filtered_actions, action_history)
-		action_history.append(next_action)
 		print(next_action)
 		if (next_action == None):
 			return
+		action_history.append(next_action["action"].replace("Object", " " + next_action["objectType"] + " ").lower())
 
 
 
