@@ -445,7 +445,6 @@ def main():
     print(env.generate_language_predicates())
     # print(env.get_all_object_types())
 
-    1/0
     for obj in env.controller.last_event.metadata["objects"]:
         print(obj["objectType"], obj["objectId"])
     print(env.get_agent_pos())

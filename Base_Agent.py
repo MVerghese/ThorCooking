@@ -5,7 +5,7 @@ from Environment import CookingEnv
 from utils import load_video_frames_cv2, get_video_metadata
 import json
 import torch
-from typing import List
+from typing import List, Dict
 LLAMA_PATH = "gemma-2-2b-it"
 MODEL_PATH = "/home/atkesonlab2/models/"
 import time
@@ -75,45 +75,56 @@ class Base_Agent:
 	Input:
 		prompt: str - task to complete
 		predicates: List[str] - environment state
-		actions: List[str] - potential actions to take
+		actions: List[Dict] - potential actions to take
 	Output: str - most likely next action
 	'''
-	def generate_next_action(self, prompt:str, predicates: List[str], actions: List[str]) -> str:
+	def generate_next_action(self, prompt:str, predicates: List[Dict], actions) -> str:
 		final_prompt = "Here is the task you are assigned to complete: " + prompt + "\nHere is the state of the environment:\n"
 		for predicate in predicates:
 			final_prompt += predicate + "\n"
 
 		final_prompt += "What is the next action you need to take?"
-
-		print(final_prompt)
+		actions_list = []
+		for act in actions:
+			actions_list.append(act["action"]  + " " + act["objectType"])
 		
-		action_probabilities = self.llm.eval_log_probs(final_prompt, actions, batch_size=1)
-		print(action_probabilities)
-
-		#return the most probable next action
+		action_probabilities = self.llm.eval_log_probs(final_prompt, actions_list, batch_size=1)
 		return actions[max(enumerate(action_probabilities), key=lambda x: x[1])[0]]
 
 
-def test_generate_next_action():
+def test_generate_next_action_blt():
 	agent = Base_Agent(load_llm=True, load_narrator=False)
 	env = CookingEnv()
-	actions_list = env.generate_possible_actions(False)
-	actions = []
-	for act in actions_list:
-		actions.append(act["action"]  + " " + act["objectType"])
-	predicates = env.generate_language_predicates()
 
 	def filter_by_object(pred):
 		pred = pred.lower()
 		return "bacon" in pred or "lettuce" in pred or "tomato" in pred or "bread" in pred or "knife" in pred
-
-	predicates = list(filter(filter_by_object, predicates))
-	actions = list(filter(filter_by_object, actions))
+	
 	prompt = "Make a BLT"
-	print("POSSIBLE ACTIONS: ", actions)
-	res = agent.generate_next_action(prompt, predicates, actions)
-	print("RESULT: ", res)
-	time.sleep(10)
+
+	actions_list = env.generate_possible_actions(False)
+	filtered_actions = list(filter(lambda x: filter_by_object(x["objectType"]), actions_list))
+	print(filtered_actions)
+	predicates = env.generate_language_predicates()
+	filtered_predicates = list(filter(filter_by_object, predicates))
+
+	next_action = agent.generate_next_action(prompt, filtered_predicates, filtered_actions)
+	print(next_action)
+
+	for _ in range(5):
+		env.step(next_action)
+		actions_list = env.generate_possible_actions(False)
+		filtered_actions = list(filter(lambda x: filter_by_object(x["objectType"]), actions_list))
+		print(filtered_actions)
+
+		predicates = env.generate_language_predicates()
+		filtered_predicates = list(filter(filter_by_object, predicates))
+		print(filtered_predicates)
+
+		next_action = agent.generate_next_action(prompt, filtered_predicates, filtered_actions)
+		print(next_action)
+
+
 
 def main():
 	agent = Base_Agent(load_llm = False, load_narrator = True)
@@ -142,7 +153,7 @@ def main():
 		json.dump(out,file)
 if __name__ == "__main__":
 	# main()
-	test_generate_next_action()
+	test_generate_next_action_blt()
 
 
 
