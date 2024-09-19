@@ -72,6 +72,7 @@ class CookingEnv:
             "BreakObject": "Break the {objectType}",
             }
         self.get_obj_properties()
+        self.current_task_dict = None
 
 
     def get_obj_properties(self):
@@ -413,6 +414,33 @@ class CookingEnv:
         agent = self.controller.last_event.metadata["agent"]
         return success, objects, agent
 
+    def load_task_state(self,task_dict, action_index):
+        assert action_index in task_dict["valid_start_indexes"]
+
+
+        self.current_task_dict = task_dict
+        pre_task_actions = task_dict["pre_task_actions"]
+        for action in pre_task_actions:
+            success = self.parse_action(action)
+            if not success:
+                print("Error loading task state, pre task action {} failed".format(action["action"]))
+                return False
+        action_segments = task_dict["action_segments"]
+        for i in range(action_index):
+            if action_segments[i]["thor_object"]:
+                actionLabel = action_segments[i]["action"]
+                objectType = action_segments[i]["object"]
+                action  = {
+                    "action": actionLabel,
+                    "objectType": objectType
+                }
+                success = self.parse_action(action)
+                if not success:
+                    print("Error loading task state, action {} failed".format(action["action"]))
+                    return False
+
+        
+
 
 
 def find_compatible_environments(task_dict,scene_nums):
@@ -459,21 +487,26 @@ def main():
     #         break
     # success, _, _ = env.step(selected_action)
     # print(success)
-    print("Get Plate")
-    print(env.pickup_obj("Plate"))
-    time.sleep(1)
-    print("Put Plate on CounterTop")
-    print(env.obj_interact("CounterTop","PutObject"))
-    time.sleep(1)
-    print("Get Bread")
-    print(env.pickup_obj("Bread"))
-    time.sleep(1)
-    print("Put Bread on CounterTop")
-    print(env.obj_interact("CounterTop","PutObject"))
-    time.sleep(1)
-    print("Slice Bread")
-    print(env.obj_interact("Bread","SliceObject"))
-    time.sleep(1)
+    # print("Get Plate")
+    # print(env.pickup_obj("Plate"))
+    # time.sleep(1)
+    # print("Put Plate on CounterTop")
+    # print(env.obj_interact("CounterTop","PutObject"))
+    # time.sleep(1)
+    # print("Get Bread")
+    # print(env.pickup_obj("Bread"))
+    # time.sleep(1)
+    # print("Put Bread on CounterTop")
+    # print(env.obj_interact("CounterTop","PutObject"))
+    # time.sleep(1)
+    # print("Slice Bread")
+    # print(env.obj_interact("Bread","SliceObject"))
+    # time.sleep(1)
+    task_dict_path = "Tasks/Make_A_BLT_0.json"
+    with open(task_dict_path, 'r') as file:
+        task_dict = json.load(file)
+    env.load_task_state(task_dict, 8)
+
     print(env.generate_language_predicates())
     # print(env.get_all_object_types())
 
