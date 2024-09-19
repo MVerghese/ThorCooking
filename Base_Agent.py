@@ -78,23 +78,36 @@ class Base_Agent:
 		actions: List[Dict] - potential actions to take
 	Output: str - most likely next action
 	'''
-	def generate_next_action(self, prompt:str, predicates: List[Dict], actions) -> str:
-		final_prompt = "Here is the task you are assigned to complete: " + prompt + "\nHere is the state of the environment:\n"
+	def generate_next_action(self, prompt:str, predicates: List[str], actions: List[Dict], action_history: List[Dict]) -> str:
+		final_prompt = "Here is the task you are assigned to complete: " + prompt + "\nHere is the current state of the environment:\n"
 		for predicate in predicates:
 			final_prompt += predicate + "\n"
 
-		final_prompt += "What is the next action you need to take?"
+		final_prompt += "Here is your action history:\n"
+		for act in action_history:
+			final_prompt += act["action"]  + " " + act["objectType"] + "\n"
+
+		final_prompt += "Based on the previous information, determine the next action needed to complete the task. If you are done with the task, respond with \"done\""
 		actions_list = []
 		for act in actions:
 			actions_list.append(act["action"]  + " " + act["objectType"])
+
+		actions_list.append("done")
+
+		# print(final_prompt)
+		# print(actions_list)
 		
 		action_probabilities = self.llm.eval_log_probs(final_prompt, actions_list, batch_size=1)
-		return actions[max(enumerate(action_probabilities), key=lambda x: x[1])[0]]
+		res_idx = max(enumerate(action_probabilities), key=lambda x: x[1])[0]
+		if (res_idx == len(actions_list) - 1):
+			return None
+		return actions[res_idx]
 
 
 def test_generate_next_action_blt():
 	agent = Base_Agent(load_llm=True, load_narrator=False)
 	env = CookingEnv()
+	action_history = []
 
 	def filter_by_object(pred):
 		pred = pred.lower()
@@ -104,25 +117,29 @@ def test_generate_next_action_blt():
 
 	actions_list = env.generate_possible_actions(False)
 	filtered_actions = list(filter(lambda x: filter_by_object(x["objectType"]), actions_list))
-	print(filtered_actions)
+
 	predicates = env.generate_language_predicates()
 	filtered_predicates = list(filter(filter_by_object, predicates))
 
-	next_action = agent.generate_next_action(prompt, filtered_predicates, filtered_actions)
+	next_action = agent.generate_next_action(prompt, filtered_predicates, filtered_actions, action_history)
+	action_history.append(next_action)
+	if (next_action is None):
+		return
 	print(next_action)
 
 	for _ in range(5):
 		env.step(next_action)
 		actions_list = env.generate_possible_actions(False)
 		filtered_actions = list(filter(lambda x: filter_by_object(x["objectType"]), actions_list))
-		print(filtered_actions)
 
 		predicates = env.generate_language_predicates()
 		filtered_predicates = list(filter(filter_by_object, predicates))
-		print(filtered_predicates)
 
-		next_action = agent.generate_next_action(prompt, filtered_predicates, filtered_actions)
+		next_action = agent.generate_next_action(prompt, filtered_predicates, filtered_actions, action_history)
+		action_history.append(next_action)
 		print(next_action)
+		if (next_action == None):
+			return
 
 
 

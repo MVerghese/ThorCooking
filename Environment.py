@@ -167,6 +167,12 @@ class CookingEnv:
         elif mode == "navigate":
             raise NotImplementedError
 
+    def obj_compare(self, query_obj,obj_list):
+        for obj in obj_list:
+            if query_obj["name"] == obj["name"]:
+                return True
+        return False
+
     def move_to_obj(self, object_name, mode="closest", verbose=False):
         if mode == "closest":
             agent_position = pos_dict_to_array(self.controller.last_event.metadata["agent"]["position"])
@@ -187,7 +193,7 @@ class CookingEnv:
                         obj_id = obj["objectId"]
                         obj_pos = pos_dict_to_array(obj["position"])
             if not obj_found:
-                print("Error object not found")
+                print("Error during movement: object not found")
                 return False
 
             # valid_bot_poses = self.controller.step(action="GetReachablePositions").metadata["actionReturn"]
@@ -217,6 +223,7 @@ class CookingEnv:
 
     def pickup_obj(self, object_name, mode="closest", verbose=False):
         if mode == "closest":
+            self.move_to_obj(object_name)
             agent_position = pos_dict_to_array(self.controller.last_event.metadata["agent"]["position"])
             event = self.controller.last_event
             objects = self.controller.last_event.metadata["objects"]
@@ -235,7 +242,7 @@ class CookingEnv:
                         obj_id = obj["objectId"]
                         obj_pos = pos_dict_to_array(obj["position"])
             if not obj_found:
-                print("Error object not found")
+                print("Error during pickup: object not found")
                 return False  
         event = self.controller.step(action='PickupObject', objectId=obj_id, forceAction = True, manualInteract=False)
         return event.metadata["lastActionSuccess"]
@@ -243,6 +250,7 @@ class CookingEnv:
     def obj_interact(self,object_name,action,mode="closest",verbose=False):
         obj_properties = self.obj_property_dict[action]
         if mode == "closest":
+            self.move_to_obj(object_name)
             agent_position = pos_dict_to_array(self.controller.last_event.metadata["agent"]["position"])
             event = self.controller.last_event
             objects = self.controller.last_event.metadata["objects"]
@@ -250,8 +258,9 @@ class CookingEnv:
             obj_pos = None
             closest_dist = np.inf
             obj_found = False
+            # print(obj_properties)
             for obj in objects:
-                if obj["objectType"] == object_name and obj in obj_properties:
+                if obj["objectType"] == object_name and self.obj_compare(obj,obj_properties):
                     obj_found = True
                     if verbose:
                         print(obj["objectId"])
@@ -261,7 +270,7 @@ class CookingEnv:
                         obj_id = obj["objectId"]
                         obj_pos = pos_dict_to_array(obj["position"])
             if not obj_found:
-                print("Error object not found")
+                print("Error during {}: object not found".format(action))
                 return False
             event = self.controller.step(action=action, objectId=obj_id, forceAction = True)
             return event.metadata["lastActionSuccess"]
@@ -365,8 +374,16 @@ class CookingEnv:
         else:
             raise NotImplementedError
 
-    def check_success(self,success_dict):
+    def check_success(self,success_conditions):
         objects = self.controller.last_event.metadata["objects"]
+        success = True
+        for condition in success_conditions:
+            condition_success = False
+            for obj in objects:
+                if condition["relation"] == "receptacle_contains":
+                    pass
+
+
 
     def generate_language_predicates(self):
         objects = self.controller.last_event.metadata["objects"]
@@ -384,7 +401,7 @@ class CookingEnv:
                 predicates.append("{} is broken".format(obj["objectType"]))
             if obj["isOpen"]:
                 predicates.append("{} is open".format(obj["objectType"]))
-            if obj in self.receptacles and len(obj["receptacleObjectIds"]) > 0:
+            if self.obj_compare(obj,self.receptacles) and len(obj["receptacleObjectIds"]) > 0:
                 receptacle_object_types = [objectID.split("|")[0] for objectID in obj["receptacleObjectIds"]]
                 predicates.append("{} contains: {}".format(obj["objectType"], ", ".join(receptacle_object_types)))
         return predicates
@@ -435,13 +452,28 @@ def main():
     # 1/0
     env = CookingEnv()
     print(env.generate_language_predicates())
-    valid_actions = env.generate_possible_actions()
-    for action in valid_actions:
-        if action["action"] == "OpenObject" and action["objectType"] == "Cabinet":
-            selected_action = action
-            break
-    success, _, _ = env.step(selected_action)
-    print(success)
+    # valid_actions = env.generate_possible_actions()
+    # for action in valid_actions:
+    #     if action["action"] == "PickupObject" and action["objectType"] == "Plate":
+    #         selected_action = action
+    #         break
+    # success, _, _ = env.step(selected_action)
+    # print(success)
+    print("Get Plate")
+    print(env.pickup_obj("Plate"))
+    time.sleep(1)
+    print("Put Plate on CounterTop")
+    print(env.obj_interact("CounterTop","PutObject"))
+    time.sleep(1)
+    print("Get Bread")
+    print(env.pickup_obj("Bread"))
+    time.sleep(1)
+    print("Put Bread on CounterTop")
+    print(env.obj_interact("CounterTop","PutObject"))
+    time.sleep(1)
+    print("Slice Bread")
+    print(env.obj_interact("Bread","SliceObject"))
+    time.sleep(1)
     print(env.generate_language_predicates())
     # print(env.get_all_object_types())
 

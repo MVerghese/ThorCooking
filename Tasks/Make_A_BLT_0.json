@@ -1,26 +1,38 @@
 {
-	"thor_objects":["Plate","Lettuce","Tomato","Bread"],
+	"thor_objects":["Plate","Lettuce","Tomato","BreadSliced"],
 	"thor_success_condition":[
+		{
+			"object":"CounterTop",
+			"relation":"receptacle_contains",
+			"arguments":["Plate"]
+		},
 		{
 			"object":"Plate",
 			"relation":"receptacle_contains",
-			"reference_object":"CounterTop"
-		},
-		{
-			"object":"Bread",
-			"relation":"receptacle_contains",
-			"reference_object":"Plate"
-		},
-		{
-			"object":"TomatoSliced",
-			"relation":"receptacle_contains",
-			"reference_object":"Plate"
-		},
-		{
-			"object":"LettuceSliced",
-			"relation":"receptacle_contains",
-			"reference_object":"Plate"
+			"arguments":["BreadSliced","LettuceSliced","TomatoSliced"]
 		}
+	],
+	"pre_task_actions":[
+		{
+			"action": "PickupObject",
+			"objectType": "Plate",
+		},
+		{
+			"action": "PutObject",
+			"objectType": "CounterTop",
+		},
+		{
+			"action": "PickupObject",
+			"objectType": "Bread",
+		},
+		{
+			"action": "PutObject",
+			"objectType": "CounterTop",
+		},
+		{
+			"action": "SliceObject",
+			"objectType": "Bread",
+		},
 	],
 	"action_segments":[
 		{
@@ -34,7 +46,7 @@
 		{
 			"action_text":"pick up bread",
 			"action":"PickupObject",
-			"object":"Bread",
+			"object":"BreadSliced",
 			"thor_object":"True",
 			"start_frame":638,
 			"end_frame":745 
@@ -178,7 +190,7 @@
 		{
 			"action_text":"pick up bread",
 			"action":"PickupObject",
-			"object":"Bread",
+			"object":"BreadSliced",
 			"thor_object":"True",
 			"start_frame":3481,
 			"end_frame":3520
@@ -192,6 +204,8 @@
 			"end_frame":3570
 		}
 
-	]
+	],
+	"valid_start_indexes":[8,9,10,11,12,13,14,15,16,17,18,19]
+
 
 }
