@@ -248,7 +248,7 @@ class CookingEnv:
         event = self.controller.step(action='PickupObject', objectId=obj_id, forceAction = True, manualInteract=False)
         return event.metadata["lastActionSuccess"]
 
-    def obj_interact(self,object_name,action,mode="closest",verbose=False):
+    def obj_interact(self,object_name,action,mode="closest",verbose=True):
         obj_properties = self.obj_property_dict[action]
         if mode == "closest":
             self.move_to_obj(object_name)
@@ -259,7 +259,7 @@ class CookingEnv:
             obj_pos = None
             closest_dist = np.inf
             obj_found = False
-            print(obj_properties)
+            # print(obj_properties)
             for obj in objects:
                 if obj["objectType"] == object_name and self.obj_compare(obj,obj_properties):
                     obj_found = True
@@ -274,6 +274,8 @@ class CookingEnv:
                 print("Error during {}: object not found".format(action))
                 return False
             event = self.controller.step(action=action, objectId=obj_id, forceAction = True)
+            if not event.metadata["lastActionSuccess"]:
+                print("Action {} on object {} failed due to: ".format(action, object_name), event.metadata["errorMessage"])
             return event.metadata["lastActionSuccess"]
         else:
             raise NotImplementedError
@@ -375,14 +377,30 @@ class CookingEnv:
         else:
             raise NotImplementedError
 
-    def check_success(self,success_conditions):
+    def check_success(self):
+        if self.current_task_dict is None:
+            print("Error: no task loaded")
+            return False
         objects = self.controller.last_event.metadata["objects"]
+        success_conditions = self.current_task_dict["thor_success_condition"]
         success = True
         for condition in success_conditions:
             condition_success = False
             for obj in objects:
-                if condition["relation"] == "receptacle_contains":
-                    pass
+                if obj["objectType"] == condition["object"]:
+                    if condition["relation"] == "receptacle_contains":
+                        receptacle_object_types = [objectID.split("|")[0] for objectID in obj["receptacleObjectIds"]]
+                        if set(condition["arguments"]) <= set(receptacle_object_types):
+                            condition_success = True
+                            break
+                    else:
+                        print("Error: invalid success condition")
+            if not condition_success:
+                success = False
+                break
+        return success
+
+                        
 
 
 
@@ -436,7 +454,7 @@ class CookingEnv:
                 }
                 success = self.parse_action(action)
                 if not success:
-                    print("Error loading task state, action {} failed".format(action["action"]))
+                    print("Error loading task state, action {} object {} at index {} failed".format(action["action"], action["objectType"], i))
                     return False
 
         
@@ -505,9 +523,10 @@ def main():
     task_dict_path = "Tasks/Make_A_BLT_0.json"
     with open(task_dict_path, 'r') as file:
         task_dict = json.load(file)
-    env.load_task_state(task_dict, 8)
+    env.load_task_state(task_dict, 18)
 
     print(env.generate_language_predicates())
+    print(env.check_success())
     # print(env.get_all_object_types())
 
     1/0

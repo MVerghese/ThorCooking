@@ -148,14 +148,6 @@
 			"end_frame":2515
 		},
 		{
-			"action_text":"pick up lettuce",
-			"action":"PickupObject",
-			"object":"Lettuce",
-			"thor_object":true,
-			"start_frame":2404,
-			"end_frame":2515
-		},
-		{
 			"action_text":"put lettuce on cutting board",
 			"action":"PutObject",
 			"object":"CounterTop",
@@ -205,7 +197,7 @@
 		}
 
 	],
-	"valid_start_indexes":[8,9,10,11,12,13,14,15,16,17,18,19]
+	"valid_start_indexes":[8,9,10,11,12,13,14,15,16,17,18]
 
 
 }
