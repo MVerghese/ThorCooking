@@ -1,6 +1,6 @@
 {
 	"thor_objects":["Plate","Lettuce","Tomato","BreadSliced"],
-	"thor_success_condition":[
+	"thor_object_success_condition":[
 		{
 			"object":"CounterTop",
 			"relation":"receptacle_contains",
@@ -9,7 +9,7 @@
 		{
 			"object":"Plate",
 			"relation":"receptacle_contains",
-			"arguments":["BreadSliced","LettuceSliced","TomatoSliced"]
+			"arguments":["Bread","Lettuce","Tomato"]
 		}
 	],
 	"pre_task_actions":[

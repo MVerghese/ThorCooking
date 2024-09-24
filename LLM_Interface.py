@@ -145,10 +145,10 @@ class transformers_interface:
 		self.cuda_devices = cuda_devices
 		self.tokenizer = transformers.AutoTokenizer.from_pretrained(
 			model_name,
-			add_bos_token=False,
-			add_eos_token=False,
-			use_fast=False,
-			padding_side='left',
+			# add_bos_token=False,
+			# add_eos_token=False,
+			# use_fast=False,
+			# padding_side='left',
 		)
 		# self.tokenizer.add_special_tokens(
 		#     {"bos_token": "<s>", "eos_token": "</s>", "pad_token": "<pad>"},
@@ -169,7 +169,7 @@ class transformers_interface:
 		# except FileExistsError:
 		#     pass
 		self.model = transformers.AutoModelForCausalLM.from_pretrained(
-			model_name, low_cpu_mem_usage=True, device_map="balanced", max_memory=mem_map, offload_folder=save_dir, torch_dtype=torch.float16
+			model_name, low_cpu_mem_usage=True, device_map="balanced", max_memory=mem_map, offload_folder=save_dir, torch_dtype=torch.bfloat16
 		)
 		self.model.eval()
 		self.model.half()
@@ -526,7 +526,7 @@ if __name__ == "__main__":
 	# # print("Queries: ", queries)
 	# # query_probs = interface.eval_log_probs_old(prompt, queries, verbose = True)
 	# # print(query_probs)
-	LLAMA_PATH = "/home/mverghese/models/Llama-3-8b-hf/"
+	LLAMA_PATH = "/media/mverghese/Mass Storage/models/Llama-3-8b-hf/"
 	llm = transformers_interface(LLAMA_PATH,cuda_devices = [0])
 	queries = ["One plus one is two", "Good morning", "Hello, how are you?"]
 	batch = llm.to_tokens_and_logprobs(queries)
