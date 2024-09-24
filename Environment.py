@@ -335,6 +335,9 @@ class CookingEnv:
 				print("Backup put failed at position: {} due to: {}".format(best_position,event.metadata["errorMessage"]))
 		return success
 
+	def get_last_event(self):
+		return self.controller.last_event
+
 	def generate_possible_actions(self,return_language_tags = False):
 		
 		possible_actions = []
