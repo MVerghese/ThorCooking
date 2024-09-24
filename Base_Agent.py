@@ -13,8 +13,8 @@ from sentence_transformers import SentenceTransformer
 from utils import compute_cos_similarity
 import json
 
-LLAMA_PATH = "/media/mverghese/Mass Storage/models/Llama-3-8b-hf/"
-MODEL_PATH = "/media/mverghese/Mass Storage/models/"
+LLAMA_PATH = "/home/atkesonlab2/models/gemma-2-2b-it"
+MODEL_PATH = "/home/atkesonlab2/models"
 
 
 class Base_Agent:
@@ -90,15 +90,15 @@ class Base_Agent:
 	Output: str - most likely next action
 	'''
 	def generate_next_action(self, prompt:str, predicates: List[str], actions: List[Dict], action_history: List[str]) -> str:
-		final_prompt = "Here is the task you are assigned to complete: " + prompt + "\nHere is the current state of the environment:\n"
+		final_prompt = "A person has been assigned the following task to complete: " + prompt + "\nHere is the current state of the environment:\n"
 		for predicate in predicates:
 			final_prompt += predicate + "\n"
 
-		final_prompt += "Here is your action history:\n"
+		final_prompt += "Here is a breakdown of actions the person has taken so far:\n"
 		for act in action_history:
 			final_prompt += act + "\n"
 
-		final_prompt += "Based on the previous information, determine the next action needed to complete the task. Do not repeat actions."
+		final_prompt += "Based on the previous information, determine what the person needs to do next to reach their goal."
 		#  If you are done with the task, respond with \"done\"
 		actions_list = []
 		for act in actions:
@@ -109,6 +109,8 @@ class Base_Agent:
 		# print(actions_list)
 		
 		action_probabilities = self.llm.eval_log_probs(final_prompt, actions_list, batch_size=1)
+		print(action_probabilities)
+		print(actions_list)
 		res_idx = max(enumerate(action_probabilities), key=lambda x: x[1])[0]
 		if (res_idx == len(actions_list) - 1):
 			return None
@@ -145,7 +147,7 @@ def test_generate_next_action_blt():
 	action_history.append(next_action["action"].replace("Object", " " + next_action["objectType"] + " ").lower())
 	print(next_action)
 
-	for _ in range(5):
+	for _ in range(1):
 		env.step(next_action)
 		actions_list = env.generate_possible_actions(False)
 		filtered_actions = list(filter(lambda x: filter_by_object(x["objectType"]), actions_list))
