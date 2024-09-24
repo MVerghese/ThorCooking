@@ -2,6 +2,10 @@ import numpy as np
 import cv2
 import ffmpeg
 import torch
+import json
+
+def compute_cos_similarity(embedding1,embedding2):
+    return np.dot(embedding1,embedding2)
 
 def combine_videos(paths,combine_idxs,output_path):
 	frames = []
@@ -46,19 +50,41 @@ def load_video_frames_cv2(video_path,frame_nums):
 def get_video_metadata(video_path):
     return(ffmpeg.probe(video_path)['streams'][0])
 
+def process_vpa_narrations(narration_list):
+	narration_dict = {}
+	for narration in narration_list:
+		if narration['video'] not in narration_dict:
+			narration_dict[narration['video']] = {}
+			narration_dict[narration['video']]['end_time'] = 0
+		if narration['end_time'] > narration_dict[narration['video']]['end_time']:
+			narration_dict[narration['video']]['end_time'] = narration['end_time']
+			prompt_steps = narration['prompt'].split('\n')
+			narration_dict[narration['video']]['task'] = prompt_steps[0][6:]
+			end_index = prompt_steps.index('')
+			narration_dict[narration['video']]['steps'] = prompt_steps[1:end_index]
+	return narration_dict
+
+
 if __name__ == "__main__":
-	paths = ["Videos/53_video_492_0_none_display.mp4",
-			 "Videos/54_video_502_0_none_display.mp4",
-			 "Videos/55_video_496_0_none_display.mp4",
-			 "Videos/56_video_504_0_none_display.mp4",
-			 "Videos/57_video_490_0_none_display.mp4",
-			 "Videos/71_video_640_0_none_display.mp4", 
-			 "Videos/72_video_646_0_none_display.mp4", 
-			 "Videos/73_video_648_0_none_display.mp4",
-			 "Videos/74_video_650_0_none_display.mp4",
-			 "Videos/75_video_634_0_none_display.mp4",
-			 ]
-	combine_videos(paths,[0,1,2],"make_a_blt_0.mp4")
-	combine_videos(paths,[0,3,4],"make_a_blt_1.mp4")
-	combine_videos(paths,[5,6,7,8,9],"make_a_latte_0.mp4")
+	# paths = ["Videos/53_video_492_0_none_display.mp4",
+	# 		 "Videos/54_video_502_0_none_display.mp4",
+	# 		 "Videos/55_video_496_0_none_display.mp4",
+	# 		 "Videos/56_video_504_0_none_display.mp4",
+	# 		 "Videos/57_video_490_0_none_display.mp4",
+	# 		 "Videos/71_video_640_0_none_display.mp4", 
+	# 		 "Videos/72_video_646_0_none_display.mp4", 
+	# 		 "Videos/73_video_648_0_none_display.mp4",
+	# 		 "Videos/74_video_650_0_none_display.mp4",
+	# 		 "Videos/75_video_634_0_none_display.mp4",
+	# 		 ]
+	# combine_videos(paths,[0,1,2],"make_a_blt_0.mp4")
+	# combine_videos(paths,[0,3,4],"make_a_blt_1.mp4")
+	# combine_videos(paths,[5,6,7,8,9],"make_a_latte_0.mp4")
+	narration_path = "cross_task_vpa_summarized.jsonl"
+	with open(narration_path, 'r') as file:
+		narration_list = file.readlines()
+	narration_list = [json.loads(narration) for narration in narration_list]
+	narration_dict = process_vpa_narrations(narration_list)
+	with open("cross_task_narrations.json", 'w') as file:
+		json.dump(narration_dict,file)
 	
