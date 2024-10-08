@@ -31,7 +31,7 @@ class Base_Agent:
 		# system_prompt_path = "Llama_chat_prompt.txt"
 		# with open(system_prompt_path, 'r') as file:
 		# 	self.system_prompt = file.read()
-		cross_task_narrations_path = "cross_task_narrations.json"
+		cross_task_narrations_path = "Narrations/cross_task_narrations.json"
 		with open(cross_task_narrations_path, 'r') as file:
 			self.cross_task_narrations = json.load(file)
 
@@ -435,7 +435,7 @@ def test_generate_next_action_blt():
 		objects = generated_text.split(",")
 		objects = [object.lstrip().rstrip() for object in objects]
 		object_embeddings = self.text_embedd_model.encode(objects)
-		
+
 
 	def group_and_summarize_narration_history(self,task,narration_history):
 		grouped_narrations = []
@@ -446,6 +446,20 @@ def test_generate_next_action_blt():
 		print(grouped_narrations)
 		summarized_narrations = self.summarize_narrations(grouped_narrations,goal = task)
 		return summarized_narrations
+
+	def select_action(self,task,action_list,history,probablistic_selection=False):
+		examples = self.select_few_shot_examples(task,3)
+		prompt = self.build_prompt(task,history,examples)
+		# completion = self.llm.generate(prompt,num_tokens=50,use_cache=False)
+		print("Prompt: ", prompt)
+		# print("LLM Completion: " + completion)
+		probs = self.llm.eval_log_probs(prompt, action_list, batch_size = 1)
+		probs/=np.sum(probs)
+		if not probablistic_selection:
+			best_index = np.argmax(probs)
+		else:
+			best_index = np.random.choice(len(action_list),p=probs)
+		return action_list[best_index], probs[best_index], best_index
 
 
 

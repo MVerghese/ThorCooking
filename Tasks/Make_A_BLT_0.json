@@ -10,6 +10,21 @@
 			"object":"Plate",
 			"relation":"receptacle_contains",
 			"arguments":["Bread","Lettuce","Tomato"]
+		},
+		{
+			"object":"Bread",
+			"relation":"sliced",
+			"arguments":[true]
+		},
+		{
+			"object":"Tomato",
+			"relation":"sliced",
+			"arguments":[true]
+		},
+		{
+			"object":"Lettuce",
+			"relation":"sliced",
+			"arguments":[true]
 		}
 	],
 	"pre_task_actions":[

@@ -19,6 +19,8 @@ Contains the following:
 - tokenizer
 - save_dir # IF YOU ARE RUNNING A 70B MODEL, YOU NEED TO CHANGE THIS TO A FOLDER IN YOUR PRIVATE SPACE (and make sure the folder exists)
 '''
+
+
 class transformers_interface:
     def __init__(self,
                  model_name: str = "/checkpoint/mverghese/pretrained_models/llama2/Llama-2-7b-hf",
@@ -44,10 +46,11 @@ class transformers_interface:
         )
         self.model.eval()
         self.model.half()
-    
+
     '''
     returns the number of tokens present in the prompt
     '''
+
     def get_num_tokens(self, prompt: str) -> int:
         assert isinstance(prompt, str)
         batch = self.tokenizer(prompt, return_tensors="pt")
@@ -57,12 +60,14 @@ class transformers_interface:
     '''
     generates next set of tokens from prompt
     '''
-    def generate(self, prompt: Union[str, List[str]], num_tokens = 400, top_p = .9, sampling =True, stopword=None) -> Union[str, List[str]]:
+
+    def generate(self, prompt: Union[str, List[str]], num_tokens=400, top_p=.9, sampling=True, stopword=None) -> Union[str, List[str]]:
         is_batch = isinstance(prompt, list)
-        
+
         if is_batch:
             context = [str(e).rstrip().lstrip() for e in prompt]
-            batch: Dict = self.tokenizer(context, return_tensors="pt", padding=True)
+            batch: Dict = self.tokenizer(
+                context, return_tensors="pt", padding=True)
         else:
             context = str(prompt).rstrip().lstrip()
             batch: Dict = self.tokenizer(context, return_tensors="pt")
@@ -97,9 +102,10 @@ class transformers_interface:
     '''
     Generate next set of tokens from input prompt until stopword is generated
     '''
+
     def generate_stopword_and_verify(self, prompt: str, stopword: str, max_attempts: int = 5):
         success = False
-        #loop until we find a stopword or we have reached the maximum number of attempts
+        # loop until we find a stopword or we have reached the maximum number of attempts
         while not success and max_attempts > 0:
             new_text = self.generate(
                 prompt, num_tokens=64, use_cache=False, stopword=stopword)
@@ -111,10 +117,10 @@ class transformers_interface:
                 max_attempts -= 1
         return new_text, success
 
-
     '''
     return tokens & logprobs of tokens
     '''
+
     def to_tokens_and_logprobs(self, input_texts: List[str], return_tokens: bool = False):
         batch = self.tokenizer(input_texts, padding=True, return_tensors="pt")
         input_ids = batch['input_ids']
@@ -143,6 +149,7 @@ class transformers_interface:
     '''
     returns the logprobs of generating the specified queries from the given prompt
     '''
+
     def eval_log_probs(self, prompt: str, queries: List[str], normalize_by_length: bool = True, batch_size: int = None):
         self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
         prompt_tokens = self.tokenizer(
@@ -166,10 +173,11 @@ class transformers_interface:
                 prob = prob / (len(log_probs[i])-num_prompt_tokens)
             probs[i] = np.exp(prob)
         return probs
-    
+
     '''
     calls eval_log_probs to choose the most likely choice to be generated from the specified list of choices
     '''
+
     def generate_choice(self, prompt: str, choices: List[str], sample: bool = False):
         probs = self.eval_log_probs(prompt, choices)
         probs = probs / np.sum(probs)
