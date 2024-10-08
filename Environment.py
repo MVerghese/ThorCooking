@@ -34,6 +34,9 @@ import json
 # 	event = controller.step(action='RotateRight')
 # 	time.sleep(.5)
 
+TASK_PATHS = {"make a blt": ["Tasks/Make_A_BLT_0.json","Tasks/Make_A_BLT_1.json",],
+			  "make a latte": ["Tasks/Make_A_Latte_0.json"],
+			  }
 
 def pos_dict_to_array(pos_dict):
 	return np.array([pos_dict["x"], pos_dict["y"], pos_dict["z"]])
@@ -41,6 +44,7 @@ def pos_dict_to_array(pos_dict):
 
 class CookingEnv:
 	def __init__(self,scene_name = "FloorPlan1"):
+		self.scene_name = scene_name
 		self.controller = Controller(
 			agentMode="default",
 			visibilityDistance=1.5,
@@ -63,6 +67,7 @@ class CookingEnv:
 		self.action_language_templates = {
 			"PickupObject": "Pick up the {objectType}",
 			"PutObject": "Put the {heldObjectType} in the {objectType}",
+			"PutObjectRecursive": "Put the {heldObjectType} on the {objectType}",
 			"OpenObject": "Open the {objectType}",
 			"CloseObject": "Close the {objectType}",
 			"CookObject": "Cook the {objectType}",
@@ -71,9 +76,28 @@ class CookingEnv:
 			"ToggleObjectOff": "Turn off the {objectType}",
 			"BreakObject": "Break the {objectType}",
 			}
+		self.sanitize_words = {"LettuceSliced": "Sliced Lettuce",
+							   "TomatoSliced": "Sliced Tomato",
+							   "BreadSliced": "Sliced Bread",
+							   "StoveKnob": "Stove Knob",
+							   "StoveBurner": "Stove Burner",
+							   "CoffeeMachine": "Coffee Machine",
+							   "CellPhone": "Cell Phone",
+							   "ButterKnife": "Butter Knife",
+							   "GarbageCan": "Garbage Can",
+							   "PepperShaker": "Pepper Shaker",
+							  }
 		self.get_obj_properties()
 		self.current_task_dict = None
 
+	def reset(self, scene_name = None):
+		if scene_name is not None:
+			self.scene_name = scene_name
+		self.controller.reset(scene = self.scene_name)
+		self.get_obj_properties()
+
+	def close(self):
+		self.controller.stop()
 
 	def get_obj_properties(self):
 		objects = self.controller.last_event.metadata["objects"]
@@ -225,7 +249,7 @@ class CookingEnv:
 			interactable_positions = event.metadata["actionReturn"]
 			# if verbose:
 			#     print(interactable_positions)
-			if len(interactable_positions) == 0:
+			if not interactable_positions:
 				print("Error no interactable positions found")
 				return False
 			best_cost = np.inf
@@ -269,7 +293,7 @@ class CookingEnv:
 		event = self.controller.step(action='PickupObject', objectId=obj_id, forceAction = True, manualInteract=False)
 		return event.metadata["lastActionSuccess"]
 
-	def obj_interact(self,object_name,action,mode="closest",verbose=True):
+	def obj_interact(self,object_name,action,mode="closest",verbose=False):
 		obj_properties = self.obj_property_dict[action]
 		if mode == "closest":
 			self.move_to_obj(object_name)
@@ -297,9 +321,13 @@ class CookingEnv:
 			event = self.controller.step(action=action, objectId=obj_id, forceAction = True)
 			if not event.metadata["lastActionSuccess"]:
 				print("Action {} on object {} failed due to: ".format(action, object_name), event.metadata["errorMessage"])
-				if action == "PutObject":
+				if action == "PutObject" and "No valid positions to place object found" in event.metadata["errorMessage"]:
 					print("Attempting backup put")
-					self.put_obj_backup(obj_id)
+					try:
+						self.put_obj_backup(obj_id)
+					except:
+						print("Backup put failed")
+						return False
 			return event.metadata["lastActionSuccess"]
 		else:
 			raise NotImplementedError
@@ -313,7 +341,7 @@ class CookingEnv:
 		)
 		interactable_positions = event.metadata["actionReturn"]
 		# print(interactable_positions)
-		if len(interactable_positions) == 0:
+		if not interactable_positions:
 			print("Error no interactable positions found for backup put")
 			return False
 		obj_pos = np.array([float(x) for x in objectId.split("|")[1:]])
@@ -338,7 +366,16 @@ class CookingEnv:
 	def get_last_event(self):
 		return self.controller.last_event
 
+	def sanitize_object_names(self,action_dict):
+		for key in action_dict:
+			if key == "objectType" or key == "heldObjectType":
+				if action_dict[key] in self.sanitize_words:
+					action_dict[key] = self.sanitize_words[action_dict[key]]
+		return action_dict
+
+
 	def generate_possible_actions(self,return_language_tags = False):
+		self.get_obj_properties()
 		
 		possible_actions = []
 		objects = self.controller.last_event.metadata["objects"]
@@ -366,6 +403,23 @@ class CookingEnv:
 					"heldObjectType": held_object["objectType"],
 					"objectType": obj["objectType"]
 				})
+				receptacle_object_IDs = [objectID for objectID in obj["receptacleObjectIds"]]
+				# print("Receptacle IDS for {}:".format(obj["objectType"]), receptacle_object_IDs)
+				receptacle_objects = []
+				for search_obj in objects:
+					if search_obj["objectId"] in receptacle_object_IDs:
+						receptacle_objects.append(search_obj)
+				for receptacle_obj in receptacle_objects:
+					possible_actions.append({
+						"action": "PutObjectRecursive",
+						"heldObject": held_object["objectId"],
+						"objectId": obj["objectId"],
+						"heldObjectType": held_object["objectType"],
+						"objectType": receptacle_obj["objectType"]
+					})
+
+
+
 		# OpenObject
 		for obj in self.openable_objects:
 			if obj["isOpen"]:
@@ -419,7 +473,7 @@ class CookingEnv:
 					"objectType": obj["objectType"]
 				})
 		if return_language_tags:
-			action_language_tags = [self.action_language_templates[action["action"]].format(**action) for action in possible_actions]
+			action_language_tags = [self.action_language_templates[action["action"]].format(**self.sanitize_object_names(action)) for action in possible_actions]
 			return possible_actions, action_language_tags
 		else:
 			return possible_actions
@@ -428,8 +482,8 @@ class CookingEnv:
 		if mode == "closest":
 			if action["action"] == "PickupObject":
 				return self.pickup_obj(action["objectType"])
-			elif action["action"] == "PutObject":
-				return self.obj_interact(action["objectType"],action["action"])
+			elif action["action"] == "PutObjectRecursive":
+				return self.obj_interact(action["objectType"],"PutObject")
 			else:
 				return self.obj_interact(action["objectType"],action["action"])
 		else:
@@ -446,13 +500,18 @@ class CookingEnv:
 			condition_success = False
 			for obj in objects:
 				if obj["objectType"] == condition["object"]:
-					print("Checking object",obj["objectId"])
+					# print("Checking object",obj["objectId"])
 					if condition["relation"] == "receptacle_contains":
 						receptacle_object_types = [objectID.split("|")[0] for objectID in obj["receptacleObjectIds"]]
-						print("contained objects: ",receptacle_object_types)
+						# print("contained objects: ",receptacle_object_types)
 						if set(condition["arguments"]) <= set(receptacle_object_types):
-							print("Success condition met: ",condition)
+							# print("Success condition met: ",condition)
 							condition_success = True
+							break
+					elif condition["relation"] == "sliced":
+						condition_success = condition["arguments"][0] == obj["isSliced"]
+						if condition_success:
+							# print("Success condition met: ",condition)
 							break
 					else:
 						print("Error: invalid success condition")
@@ -489,9 +548,9 @@ class CookingEnv:
 
 	def step(self,action):
 		success = self.parse_action(action)
-		objects = self.controller.last_event.metadata["objects"]
-		agent = self.controller.last_event.metadata["agent"]
-		return success, objects, agent
+		objects_info = self.controller.last_event.metadata["objects"]
+		agent_info = self.controller.last_event.metadata["agent"]
+		return success, objects_info, agent_info
 
 	def load_task_state(self,task_dict, action_index):
 		assert action_index in task_dict["valid_start_indexes"]
@@ -520,6 +579,15 @@ class CookingEnv:
 					print("Error loading task state, action {} object {} at index {} failed".format(action["action"], action["objectType"], i))
 					return False
 
+	def get_gt_history(self):
+		if self.current_task_dict is None:
+			print("Error: no task loaded")
+			return None
+		action_segments = self.current_task_dict["action_segments"]
+		history = [segment["action_text"] for segment in action_segments]
+		return history
+
+
 		
 
 
@@ -545,17 +613,33 @@ def find_compatible_environments(task_dict,scene_nums):
 			valid_scenes.append(scene_num)
 	return valid_scenes
 
+def setup_environment(scene_name, task_name, start_index, task_version = 0):
+	env = CookingEnv(scene_name=scene_name)
+	task_dict_path = TASK_PATHS[task_name][task_version]
+	# task_dict_path = "Tasks/Make_A_BLT_0.json"
+	with open(task_dict_path, 'r') as file:
+		task_dict = json.load(file)
+	env.load_task_state(task_dict, start_index)
+	return env
+
 			
 
 
 def main():
 	successful_floorplans = [2, 3, 6, 9, 11, 12, 14, 15, 17, 23, 28, 29, 30]
-	task_dict_path = "Tasks/Make_A_BLT_0.json"
-	with open(task_dict_path, 'r') as file:
-		task_dict = json.load(file)
-	scene_nums = list(range(1,31))
-	valid_scenes = find_compatible_environments(task_dict,scene_nums)
-	print(valid_scenes)
+	# task_dict_path = "Tasks/Make_A_BLT_0.json"
+	# with open(task_dict_path, 'r') as file:
+	# 	task_dict = json.load(file)
+	# scene_nums = list(range(1,31))
+	# valid_scenes = find_compatible_environments(task_dict,scene_nums)
+	# print(valid_scenes)
+	env = setup_environment("FloorPlan2", "make a blt", 17)
+	actions, action_language_tags = env.generate_possible_actions(return_language_tags=True)
+	# print(env.generate_language_predicates())
+	print(action_language_tags)
+	# success = env.check_success()
+	# print(success)
+
 	1/0
 
 
