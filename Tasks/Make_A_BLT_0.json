@@ -59,7 +59,7 @@
 			"end_frame":637 
 		},
 		{
-			"action_text":"pick up bread",
+			"action_text":"pick up the sliced bread",
 			"action":"PickupObject",
 			"object":"BreadSliced",
 			"thor_object":true,
@@ -67,7 +67,7 @@
 			"end_frame":745 
 		},
 		{
-			"action_text":"put bread in plate",
+			"action_text":"put the sliced bread in the plate",
 			"action":"PutObject",
 			"object":"Plate",
 			"thor_object":true,
@@ -75,7 +75,7 @@
 			"end_frame":811 
 		},
 		{
-			"action_text":"spread mayonnaise on bread",
+			"action_text":"spread mayonnaise on the sliced bread in the plate",
 			"action":"None",
 			"object":"Mayonnaise",
 			"thor_object":false,
@@ -83,7 +83,7 @@
 			"end_frame":1355 
 		},
 		{
-			"action_text":"pick up bacon",
+			"action_text":"pick up the bacon",
 			"action":"PickupObject",
 			"object":"Bacon",
 			"thor_object":false,
@@ -91,7 +91,7 @@
 			"end_frame":1509 
 		},
 		{
-			"action_text":"put bacon on bread",
+			"action_text":"put the bacon on the sliced bread in the plate",
 			"action":"PutObject",
 			"object":"Plate",
 			"thor_object":false,
@@ -99,7 +99,7 @@
 			"end_frame":1540
 		},
 		{
-			"action_text":"pick up bacon",
+			"action_text":"pick up the bacon",
 			"action":"PickupObject",
 			"object":"Bacon",
 			"thor_object":false,
@@ -107,7 +107,7 @@
 			"end_frame":1564 
 		},
 		{
-			"action_text":"put bacon on bread",
+			"action_text":"put the bacon on the sliced bread in the plate",
 			"action":"PutObject",
 			"object":"Plate",
 			"thor_object":false,
@@ -115,7 +115,7 @@
 			"end_frame":1600
 		},
 		{
-			"action_text":"pick up tomato",
+			"action_text":"pick up the tomato",
 			"action":"PickupObject",
 			"object":"Tomato",
 			"thor_object":true,
@@ -123,7 +123,7 @@
 			"end_frame":1742
 		},
 		{
-			"action_text":"put tomato on cutting board",
+			"action_text":"put the tomato on the counter top",
 			"action":"PutObject",
 			"object":"CounterTop",
 			"thor_object":true,
@@ -131,7 +131,7 @@
 			"end_frame":1765
 		},
 		{
-			"action_text":"slice tomato",
+			"action_text":"slice the tomato",
 			"action":"SliceObject",
 			"object":"Tomato",
 			"thor_object":true,
@@ -139,7 +139,7 @@
 			"end_frame":2160
 		},
 		{
-			"action_text":"pick up tomato slice",
+			"action_text":"pick up the tomato slice",
 			"action":"PickupObject",
 			"object":"TomatoSliced",
 			"thor_object":true,
@@ -147,7 +147,7 @@
 			"end_frame":2243
 		},
 		{
-			"action_text":"put tomato slice on bread",
+			"action_text":"put the tomato slice on the sliced bread in the plate",
 			"action":"PutObject",
 			"object":"Plate",
 			"thor_object":true,
@@ -155,7 +155,7 @@
 			"end_frame":2327
 		},
 		{
-			"action_text":"pick up lettuce",
+			"action_text":"pick up the lettuce",
 			"action":"PickupObject",
 			"object":"Lettuce",
 			"thor_object":true,
@@ -163,7 +163,7 @@
 			"end_frame":2515
 		},
 		{
-			"action_text":"put lettuce on cutting board",
+			"action_text":"put the lettuce on the counter top",
 			"action":"PutObject",
 			"object":"CounterTop",
 			"thor_object":true,
@@ -171,7 +171,7 @@
 			"end_frame":2577
 		},
 		{
-			"action_text":"slice lettuce",
+			"action_text":"slice the lettuce",
 			"action":"SliceObject",
 			"object":"Lettuce",
 			"thor_object":true,
@@ -179,7 +179,7 @@
 			"end_frame":3309
 		},
 		{
-			"action_text":"pick up lettuce slice",
+			"action_text":"pick up the lettuce slice",
 			"action":"PickupObject",
 			"object":"LettuceSliced",
 			"thor_object":true,
@@ -187,7 +187,7 @@
 			"end_frame":3350
 		},
 		{
-			"action_text":"put lettuce slice on bread",
+			"action_text":"put the lettuce slice on the sliced bread in the plate",
 			"action":"PutObject",
 			"object":"Plate",
 			"thor_object":true,
@@ -195,7 +195,7 @@
 			"end_frame":3480
 		},
 		{
-			"action_text":"pick up bread",
+			"action_text":"pick up the sliced bread",
 			"action":"PickupObject",
 			"object":"BreadSliced",
 			"thor_object":true,
@@ -203,7 +203,7 @@
 			"end_frame":3520
 		},
 		{
-			"action_text":"put bread on lettuce",
+			"action_text":"put the sliced bread on the lettuce slice in the plate",
 			"action":"PutObject",
 			"object":"Plate",
 			"thor_object":true,

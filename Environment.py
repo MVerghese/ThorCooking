@@ -67,7 +67,7 @@ class CookingEnv:
 		self.action_language_templates = {
 			"PickupObject": "Pick up the {objectType}",
 			"PutObject": "Put the {heldObjectType} in the {objectType}",
-			"PutObjectRecursive": "Put the {heldObjectType} on the {objectType}",
+			"PutObjectRecursive": "Put the {heldObjectType} on the {intermediateObjectType} in the {objectType}",
 			"OpenObject": "Open the {objectType}",
 			"CloseObject": "Close the {objectType}",
 			"CookObject": "Cook the {objectType}",
@@ -367,8 +367,9 @@ class CookingEnv:
 		return self.controller.last_event
 
 	def sanitize_object_names(self,action_dict):
+		action_dict = action_dict.copy()
 		for key in action_dict:
-			if key == "objectType" or key == "heldObjectType":
+			if key == "objectType" or key == "heldObjectType" or key == "intermediateObjectType":
 				if action_dict[key] in self.sanitize_words:
 					action_dict[key] = self.sanitize_words[action_dict[key]]
 		return action_dict
@@ -415,7 +416,8 @@ class CookingEnv:
 						"heldObject": held_object["objectId"],
 						"objectId": obj["objectId"],
 						"heldObjectType": held_object["objectType"],
-						"objectType": receptacle_obj["objectType"]
+						"objectType": obj["objectType"],
+						"intermediateObjectType": receptacle_obj["objectType"]
 					})
 
 
@@ -579,13 +581,18 @@ class CookingEnv:
 					print("Error loading task state, action {} object {} at index {} failed".format(action["action"], action["objectType"], i))
 					return False
 
-	def get_gt_history(self):
+	def set_gt_history(self):
 		if self.current_task_dict is None:
 			print("Error: no task loaded")
 			return None
 		action_segments = self.current_task_dict["action_segments"]
-		history = [segment["action_text"] for segment in action_segments]
-		return history
+		self.history = [segment["action_text"] for segment in action_segments]
+
+	def set_narration_dict(self,narration_dict):
+		self.history = [element["narrations"] for element in narration_dict]
+
+	def get_history(self):
+		return self.history
 
 
 		
@@ -613,13 +620,19 @@ def find_compatible_environments(task_dict,scene_nums):
 			valid_scenes.append(scene_num)
 	return valid_scenes
 
-def setup_environment(scene_name, task_name, start_index, task_version = 0):
+def setup_environment(scene_name, task_name, start_index, task_version = 0, history = "gt"):
 	env = CookingEnv(scene_name=scene_name)
 	task_dict_path = TASK_PATHS[task_name][task_version]
 	# task_dict_path = "Tasks/Make_A_BLT_0.json"
 	with open(task_dict_path, 'r') as file:
 		task_dict = json.load(file)
 	env.load_task_state(task_dict, start_index)
+	if history == "gt":
+		env.set_gt_history()
+	else:
+		with open(history, 'r') as file:
+			narration_dict = json.load(file)
+		env.set_narration_dict(narration_dict)
 	return env
 
 			

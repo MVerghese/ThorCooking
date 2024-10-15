@@ -31,6 +31,7 @@ class Base_Agent:
 			self.cross_task_narrations = json.load(file)
 
 		self.text_embedd_model = SentenceTransformer('multi-qa-mpnet-base-cos-v1',device='cuda')
+		self.prob_scaling_factor = 3
 
 	def narrate(self,frames,num_sequences = 1):
 		if isinstance(frames[0],np.ndarray):
@@ -56,6 +57,7 @@ class Base_Agent:
 			narrations[i] = narration
 		return narrations
 
+
 	def narrate_video_unsegmented(self,video_path,narrate_frequency,narrations_per_clip=1):
 		video_metadata = get_video_metadata(video_path)
 		frame_rate = int(eval(video_metadata['avg_frame_rate']))
@@ -72,6 +74,19 @@ class Base_Agent:
 			narr_dict = {}
 			narr_dict['start_frame'] = i
 			narr_dict['stop_frame'] = i+frames_per_segment
+			narr_dict['narrations'] = narrations
+			out.append(narr_dict)
+		return out
+
+	def narrate_video_segmented(self,video_path,segments,narrations_per_clip=1):
+		out = []
+		for segment in segments:
+			frame_nums = np.linspace(segment[0],segment[1],self.frames_per_clip,dtype=int)
+			frames = load_video_frames_cv2(video_path,frame_nums)
+			narrations = self.narrate(frames,narrations_per_clip)
+			narr_dict = {}
+			narr_dict['start_frame'] = segment[0]
+			narr_dict['stop_frame'] = segment[1]
 			narr_dict['narrations'] = narrations
 			out.append(narr_dict)
 		return out
@@ -215,19 +230,37 @@ class Base_Agent:
 		summarized_narrations = self.summarize_narrations(grouped_narrations,goal = task)
 		return summarized_narrations
 
-	def select_action(self,task,action_list,history,probablistic_selection=False):
+	def select_action(self,task,action_list,history,probablistic_selection=False, verbose = False):
 		examples = self.select_few_shot_examples(task,3)
 		prompt = self.build_prompt(task,history,examples)
-		# completion = self.llm.generate(prompt,num_tokens=50,use_cache=False)
-		print("Prompt: ", prompt)
-		# print("LLM Completion: " + completion)
-		probs = self.llm.eval_log_probs(prompt, action_list, batch_size = 1)
-		probs/=np.sum(probs)
+		print("Action History: ")
+		print(history)
+		completion = self.llm.generate(prompt,num_tokens=50,use_cache=False)
+		next_action = completion.split("\n")[0]
+		print("next action: ", next_action)
+		# prompt = "A person is currently attempting to " + task + ". The next they would like to take is: " + next_action + "\n"
+		# prompt += "The following isa list of possible actions they can take: " + "\n".join(list(set(action_list))) + "\n"
+		# prompt += "Which action should they take next? \n"
+		# # print("LLM Completion: " + completion)
+		# probs = self.llm.eval_log_probs(prompt, action_list, batch_size = 1)
+		# probs/=np.sum(probs)
+		# if verbose:
+		# 	for i, action in enumerate(list(set(action_list))):
+		# 		print("Action: ", action, "Prob: ", probs[i])
+
+		action_list_embedds = self.text_embedd_model.encode(action_list)
+		next_action_embedd = self.text_embedd_model.encode(next_action)
+		similarity = compute_cos_similarity(action_list_embedds,next_action_embedd)
+		# probs = np.exp(similarity-1)
+
+
 		if not probablistic_selection:
-			best_index = np.argmax(probs)
+			best_index = np.argmax(similarity)
 		else:
+			probs = np.exp(similarity-1)
 			best_index = np.random.choice(len(action_list),p=probs)
-		return action_list[best_index], probs[best_index], best_index
+		# print("Action: ", action_list[best_index])
+		return action_list[best_index], similarity[best_index], best_index
 
 
 
