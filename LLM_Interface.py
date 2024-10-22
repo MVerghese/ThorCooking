@@ -249,8 +249,9 @@ class Base_Server:
                     image_file = os.path.join(
                         self.image_read_folder, str(image_index).zfill(4) + ".jpg")
                     print("New image: {}".format(image_file))
-                    image = cv2.imread(image_file)
-                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                    image = cv2.imread(image_file)  # type: ignore
+                    image = cv2.cvtColor(
+                        image, cv2.COLOR_BGR2RGB)  # type: ignore
                     if image is None:
                         print("Image is none")
                         continue
