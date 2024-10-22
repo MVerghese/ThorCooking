@@ -43,7 +43,7 @@ class Base_Agent:
     def narrate(self, frames, num_sequences=1):
         if isinstance(frames[0], np.ndarray):
             torch_images = []
-            for image in images:
+            for image in frames:
                 torch_image = torch.from_numpy(image).permute(
                     2, 0, 1).unsqueeze(0).float()
                 torch_images.append(torch_image)
@@ -87,19 +87,19 @@ class Base_Agent:
             out.append(narr_dict)
         return out
 
-        def narrate_video_segmented(self, video_path, segments, narrations_per_clip=1):
-            out = []
-            for segment in segments:
-                frame_nums = np.linspace(
-                    segment[0], segment[1], self.frames_per_clip, dtype=int)
-                frames = load_video_frames_cv2(video_path, frame_nums)
-                narrations = self.narrate(frames, narrations_per_clip)
-                narr_dict = {}
-                narr_dict['start_frame'] = segment[0]
-                narr_dict['stop_frame'] = segment[1]
-                narr_dict['narrations'] = narrations
-                out.append(narr_dict)
-            return out
+    def narrate_video_segmented(self, video_path, segments, narrations_per_clip=1):
+        out = []
+        for segment in segments:
+            frame_nums = np.linspace(
+                segment[0], segment[1], self.frames_per_clip, dtype=int)
+            frames = load_video_frames_cv2(video_path, frame_nums)
+            narrations = self.narrate(frames, narrations_per_clip)
+            narr_dict = {}
+            narr_dict['start_frame'] = segment[0]
+            narr_dict['stop_frame'] = segment[1]
+            narr_dict['narrations'] = narrations
+            out.append(narr_dict)
+        return out
 
     def select_few_shot_examples(self, task, num_retrievals):
         tasks = [self.cross_task_narrations[video]["task"]
@@ -247,38 +247,38 @@ class Base_Agent:
             grouped_narrations, goal=task)
         return summarized_narrations
 
-        def select_action(self, task, action_list, history, probablistic_selection=False, verbose=False):
-            examples = self.select_few_shot_examples(task, 3)
-            prompt = self.build_prompt(task, history, examples)
-            print("Action History: ")
-            print(history)
-            completion = self.llm.generate(
-                prompt, num_tokens=50, use_cache=False)
-            next_action = completion.split("\n")[0]
-            print("next action: ", next_action)
-            # prompt = "A person is currently attempting to " + task + ". The next they would like to take is: " + next_action + "\n"
-            # prompt += "The following isa list of possible actions they can take: " + "\n".join(list(set(action_list))) + "\n"
-            # prompt += "Which action should they take next? \n"
-            # # print("LLM Completion: " + completion)
-            # probs = self.llm.eval_log_probs(prompt, action_list, batch_size = 1)
-            # probs/=np.sum(probs)
-            # if verbose:
-            # 	for i, action in enumerate(list(set(action_list))):
-            # 		print("Action: ", action, "Prob: ", probs[i])
+    def select_action(self, task, action_list, history, probablistic_selection=False, verbose=False):
+        examples = self.select_few_shot_examples(task, 3)
+        prompt = self.build_prompt(task, history, examples)
+        print("Action History: ")
+        print(history)
+        completion = self.llm.generate(
+            prompt, num_tokens=50, use_cache=False)
+        next_action = completion.split("\n")[0]
+        print("next action: ", next_action)
+        # prompt = "A person is currently attempting to " + task + ". The next they would like to take is: " + next_action + "\n"
+        # prompt += "The following isa list of possible actions they can take: " + "\n".join(list(set(action_list))) + "\n"
+        # prompt += "Which action should they take next? \n"
+        # # print("LLM Completion: " + completion)
+        # probs = self.llm.eval_log_probs(prompt, action_list, batch_size = 1)
+        # probs/=np.sum(probs)
+        # if verbose:
+        # 	for i, action in enumerate(list(set(action_list))):
+        # 		print("Action: ", action, "Prob: ", probs[i])
 
-            action_list_embedds = self.text_embedd_model.encode(action_list)
-            next_action_embedd = self.text_embedd_model.encode(next_action)
-            similarity = compute_cos_similarity(
-                action_list_embedds, next_action_embedd)
-            # probs = np.exp(similarity-1)
+        action_list_embedds = self.text_embedd_model.encode(action_list)
+        next_action_embedd = self.text_embedd_model.encode(next_action)
+        similarity = compute_cos_similarity(
+            action_list_embedds, next_action_embedd)
+        # probs = np.exp(similarity-1)
 
-            if not probablistic_selection:
-                best_index = np.argmax(similarity)
-            else:
-                probs = np.exp(similarity-1)
-                best_index = np.random.choice(len(action_list), p=probs)
-            # print("Action: ", action_list[best_index])
-            return action_list[best_index], similarity[best_index], best_index
+        if not probablistic_selection:
+            best_index = np.argmax(similarity)
+        else:
+            probs = np.exp(similarity-1)
+            best_index = np.random.choice(len(action_list), p=probs)
+        # print("Action: ", action_list[best_index])
+        return action_list[best_index], similarity[best_index], best_index
 
 
 def main():
