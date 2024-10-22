@@ -3,17 +3,18 @@ import Base_Agent
 import numpy as np
 
 def single_eval(agent, task,environment,start_index, num_gt_actions, timeout = 10):
-	env = Environment.setup_environment("FloorPlan" + str(environment), task, start_index)
+	env = Environment.setup_environment("FloorPlan" + str(environment), task, start_index, history="Narrations/blt_0_narrations_video-llava_gt.json")
 	try:
-		history = env.get_gt_history()[:start_index]
+		history = env.get_history()[:start_index]
 		successful_actions = []
 		num_actions = num_gt_actions - start_index + timeout
 		print("Num actions: ", num_actions)
 		for i in range(num_actions):
 			possible_actions, action_language_tags = env.generate_possible_actions(return_language_tags = True)
-			action, probs, index = agent.select_action(task,action_language_tags,history + successful_actions,probablistic_selection=True)
+			action, probs, index = agent.select_action(task,action_language_tags,history + successful_actions,probablistic_selection=False, verbose=True)
 			print("Action: ", action)
 			action_dict = possible_actions[index]
+			print("Action dict: ", action_dict)
 			action_success, _, _ = env.step(action_dict)
 			if action_success:
 				successful_actions.append(action)
