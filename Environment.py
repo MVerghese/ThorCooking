@@ -34,7 +34,7 @@ import json
 # 	event = controller.step(action='RotateRight')
 # 	time.sleep(.5)
 
-TASK_PATHS = {"make a blt": ["Tasks/Make_A_BLT_0.json","Tasks/Make_A_BLT_1.json",],
+TASK_PATHS = {"make a blt": ["Tasks/Make_A_BLT_0_abridged.json","Tasks/Make_A_BLT_1.json",],
 			  "make a latte": ["Tasks/Make_A_Latte_0.json"],
 			  }
 
@@ -64,6 +64,10 @@ class CookingEnv:
 			height=300,
 			fieldOfView=90
 		)
+		self.goal_object_name = ""
+		self.goal_object_type = ""
+		self.goal_object_ID = ""
+		self.default_receptacle_type = "CounterTop"
 		self.action_language_templates = {
 			"PickupObject": "Pick up the {objectType}",
 			"PutObject": "Put the {heldObjectType} in the {objectType}",
@@ -75,6 +79,7 @@ class CookingEnv:
 			"ToggleObjectOn": "Turn on the {objectType}",
 			"ToggleObjectOff": "Turn off the {objectType}",
 			"BreakObject": "Break the {objectType}",
+			"AddObject": "Add the {objectType} to the {goalObject}"
 			}
 		self.sanitize_words = {"LettuceSliced": "Sliced Lettuce",
 							   "TomatoSliced": "Sliced Tomato",
@@ -86,6 +91,7 @@ class CookingEnv:
 							   "ButterKnife": "Butter Knife",
 							   "GarbageCan": "Garbage Can",
 							   "PepperShaker": "Pepper Shaker",
+							   "CounterTop": "Counter Top",
 							  }
 		self.get_obj_properties()
 		self.current_task_dict = None
@@ -217,30 +223,103 @@ class CookingEnv:
 				return True
 		return False
 
-	def move_to_obj(self, object_name, mode="closest", verbose=False):
+	def get_obj_by_ID(self, objectID):
+		objects = self.controller.last_event.metadata["objects"]
+		for obj in objects:
+			if obj["objectId"] == objectID:
+				return obj
+		return None
+
+	def get_closest_obj(self, object_name, penalize_objects_in_goal = False, penalize_objects_in_closed_receptacles = False):
+		agent_position = pos_dict_to_array(self.controller.last_event.metadata["agent"]["position"])
+		event = self.controller.last_event
+		objects = self.controller.last_event.metadata["objects"]
+		obj_id = None
+		obj_pos = None
+		closest_dist = np.inf
+		obj_found = False
+		target_objects_in_goal = []
+		target_objects_in_closed_receptacles = []
+		for obj in objects:
+			if obj["objectType"] == object_name:
+					obj_found = True
+					good_object = True
+					if penalize_objects_in_goal:
+						objects_in_goal = self.get_obj_by_ID(self.goal_object_ID)["receptacleObjectIds"]
+						if obj["objectId"] in objects_in_goal:
+							good_object = False
+							target_objects_in_goal.append(obj["objectId"])
+					if penalize_objects_in_closed_receptacles:
+						obj_parent_receptable = obj["parentReceptacles"]
+						if obj_parent_receptable == None:
+							obj_parent_receptable = []
+						for receptacle in obj_parent_receptable:
+							receptable_obj = self.get_obj_by_ID(receptacle)
+							# print("Object {} in receptacle: {}".format(obj["objectId"],receptable_obj["objectId"]))
+							if receptable_obj["openable"] and receptable_obj["isOpen"] == False:
+								good_object = False
+								target_objects_in_closed_receptacles.append(obj["objectId"])
+								break
+					if good_object:
+						if obj["distance"] < closest_dist:
+							closest_dist = obj["distance"]
+							obj_id = obj["objectId"]
+							obj_pos = pos_dict_to_array(obj["position"])
+		if not obj_found:
+			print("Error during search: object {} not found".format(object_name))
+			return None
+		if obj_id != None:
+			return obj_id
+		else:
+			if len(target_objects_in_closed_receptacles) > 0:
+				print("No valid objects found, penalizing objects in closed receptacles: ", target_objects_in_closed_receptacles)
+				return target_objects_in_closed_receptacles[0]
+			elif len(target_objects_in_goal) > 0:
+				print("No valid objects found, penalizing objects in goal: ", target_objects_in_goal)
+				return target_objects_in_goal[0]
+
+
+
+
+
+
+	def move_to_obj(self, object_name, mode="closest", verbose=False, penalize_objects_in_goal = False, penalize_objects_in_closed_receptacles = False):
 		if mode == "closest":
 			agent_position = pos_dict_to_array(self.controller.last_event.metadata["agent"]["position"])
-			event = self.controller.last_event
-			objects = self.controller.last_event.metadata["objects"]
-			obj_id = None
-			obj_pos = None
-			closest_dist = np.inf
-			obj_found = False
-			for obj in objects:
-				if obj["objectType"] == object_name:
-					obj_found = True
-					if verbose:
-						print(obj["objectId"])
-					# dist = np.linalg.norm(pos_dict_to_array(obj["position"]) - agent_position)
-					if obj["distance"] < closest_dist:
-						closest_dist = obj["distance"]
-						obj_id = obj["objectId"]
-						obj_pos = pos_dict_to_array(obj["position"])
-			if not obj_found:
-				print("Error during movement: object not found")
+			obj_id = self.get_closest_obj(object_name, penalize_objects_in_goal = penalize_objects_in_goal, penalize_objects_in_closed_receptacles = penalize_objects_in_closed_receptacles)
+			if not obj_id:
+				print("Error during move to object: object not found")
 				return False
+			obj_pos = pos_dict_to_array(self.get_obj_by_ID(obj_id)["position"])
 
 			# valid_bot_poses = self.controller.step(action="GetReachablePositions").metadata["actionReturn"]
+			event = self.controller.step(
+				action="GetInteractablePoses",
+				objectId=obj_id,
+				rotations=list(range(0, 360, 10)),
+			)
+			interactable_positions = event.metadata["actionReturn"]
+			# if verbose:
+			#     print(interactable_positions)
+			if not interactable_positions:
+				print("Error no interactable positions found")
+				return False
+			best_cost = np.inf
+			pos_idx = 0
+			for i, pos in enumerate(interactable_positions):
+				cost = self._pos_cost(pos, obj_pos)
+				if cost < best_cost:
+					# print("BEST COST: ", cost)
+					best_cost = cost
+					pos_idx = i
+			success = self.move_to_dict(interactable_positions[pos_idx], mode="teleport")
+			event = self.controller.step("MoveAhead")
+
+			return(success)
+
+		elif mode == "specific":
+			obj_id = object_name
+			obj_pos = pos_dict_to_array(self.get_obj_by_ID(obj_id)["position"])
 			event = self.controller.step(
 				action="GetInteractablePoses",
 				objectId=obj_id,
@@ -267,55 +346,23 @@ class CookingEnv:
 		else:
 			raise NotImplementedError
 
-	def pickup_obj(self, object_name, mode="closest", verbose=False):
+	def pickup_obj(self, object_name, mode="closest", verbose=False, penalize_objects_in_goal = False, penalize_objects_in_closed_receptacles = False):
 		if mode == "closest":
 			self.move_to_obj(object_name)
 			agent_position = pos_dict_to_array(self.controller.last_event.metadata["agent"]["position"])
-			event = self.controller.last_event
-			objects = self.controller.last_event.metadata["objects"]
-			obj_id = None
-			obj_pos = None
-			closest_dist = np.inf
-			obj_found = False
-			for obj in objects:
-				if obj["objectType"] == object_name and obj["pickupable"]:
-					obj_found = True
-					if verbose:
-						print(obj["objectId"])
-					# dist = np.linalg.norm(pos_dict_to_array(obj["position"]) - agent_position)
-					if obj["distance"] < closest_dist:
-						closest_dist = obj["distance"]
-						obj_id = obj["objectId"]
-						obj_pos = pos_dict_to_array(obj["position"])
-			if not obj_found:
+			obj_id = self.get_closest_obj(object_name, penalize_objects_in_goal = penalize_objects_in_goal, penalize_objects_in_closed_receptacles = penalize_objects_in_closed_receptacles)
+			if not obj_id:
 				print("Error during pickup: object not found")
 				return False  
 		event = self.controller.step(action='PickupObject', objectId=obj_id, forceAction = True, manualInteract=False)
 		return event.metadata["lastActionSuccess"]
 
-	def obj_interact(self,object_name,action,mode="closest",verbose=False):
+	def obj_interact(self,object_name,action,mode="specific",verbose=False, penalize_objects_in_goal = False, penalize_objects_in_closed_receptacles = False):
 		obj_properties = self.obj_property_dict[action]
 		if mode == "closest":
 			self.move_to_obj(object_name)
-			agent_position = pos_dict_to_array(self.controller.last_event.metadata["agent"]["position"])
-			event = self.controller.last_event
-			objects = self.controller.last_event.metadata["objects"]
-			obj_id = None
-			obj_pos = None
-			closest_dist = np.inf
-			obj_found = False
-			# print(obj_properties)
-			for obj in objects:
-				if obj["objectType"] == object_name and self.obj_compare(obj,obj_properties):
-					obj_found = True
-					if verbose:
-						print(obj["objectId"])
-					# dist = np.linalg.norm(pos_dict_to_array(obj["position"]) - agent_position)
-					if obj["distance"] < closest_dist:
-						closest_dist = obj["distance"]
-						obj_id = obj["objectId"]
-						obj_pos = pos_dict_to_array(obj["position"])
-			if not obj_found:
+			obj_id = self.get_closest_obj(object_name, penalize_objects_in_goal = penalize_objects_in_goal, penalize_objects_in_closed_receptacles = penalize_objects_in_closed_receptacles)
+			if not obj_id:
 				print("Error during {}: object not found".format(action))
 				return False
 			event = self.controller.step(action=action, objectId=obj_id, forceAction = True)
@@ -329,8 +376,37 @@ class CookingEnv:
 						print("Backup put failed")
 						return False
 			return event.metadata["lastActionSuccess"]
+
+		if mode == "specific":
+			obj_id = object_name
+			event = self.controller.step(action=action, objectId=obj_id, forceAction = True)
+			if not event.metadata["lastActionSuccess"]:
+				print("Action {} on object {} failed due to: ".format(action, object_name), event.metadata["errorMessage"])
+				if action == "PutObject" and "No valid positions to place object found" in event.metadata["errorMessage"]:
+					print("Attempting backup put")
+					try:
+						self.put_obj_backup(obj_id)
+					except:
+						print("Backup put failed")
+						return False
+			return event.metadata["lastActionSuccess"]
 		else:
 			raise NotImplementedError
+
+	def add_object(self,object_name,goal_object_name,mode="closest",verbose=False, penalize_objects_in_goal = False, penalize_objects_in_closed_receptacles = False):
+		self.move_to_obj(object_name, mode=mode, verbose=verbose, penalize_objects_in_goal = penalize_objects_in_goal, penalize_objects_in_closed_receptacles = penalize_objects_in_closed_receptacles)
+		success = self.pickup_obj(object_name, mode=mode, verbose=verbose, penalize_objects_in_goal = penalize_objects_in_goal, penalize_objects_in_closed_receptacles = penalize_objects_in_closed_receptacles)
+		if not success:
+			return False
+		self.move_to_obj(goal_object_name, mode="specific", verbose=verbose, penalize_objects_in_goal = penalize_objects_in_goal, penalize_objects_in_closed_receptacles = penalize_objects_in_closed_receptacles)
+		success = self.obj_interact(goal_object_name,"PutObject", mode="specific", verbose=verbose, penalize_objects_in_goal = penalize_objects_in_goal, penalize_objects_in_closed_receptacles = penalize_objects_in_closed_receptacles)
+		if not success:
+			print("Error during add object: put failed, leaving object on {}".format(self.default_receptacle_type))
+			self.obj_interact(self.default_receptacle_type,"PutObject", mode="closest", verbose=verbose, penalize_objects_in_goal = penalize_objects_in_goal, penalize_objects_in_closed_receptacles = penalize_objects_in_closed_receptacles)
+			return False
+		return success
+
+
 
 	def put_obj_backup(self,objectId):
 
@@ -375,7 +451,7 @@ class CookingEnv:
 		return action_dict
 
 
-	def generate_possible_actions(self,return_language_tags = False):
+	def generate_possible_actions(self,return_language_tags = False, remove_duplicates = True):
 		self.get_obj_properties()
 		
 		possible_actions = []
@@ -394,6 +470,15 @@ class CookingEnv:
 					"objectId": obj["objectId"],
 					"objectType": obj["objectType"]
 				})
+			for obj in self.pickupable_objects:
+				possible_actions.append({
+					"action": "AddObject",
+					"objectId": obj["objectId"],
+					"objectType": obj["objectType"],
+					"goalObject": self.goal_object_name,
+					"goalObjectId": self.goal_object_ID
+				})
+
 		# PutObject
 		if held_object is not None:
 			for obj in self.receptacles:
@@ -419,6 +504,7 @@ class CookingEnv:
 						"objectType": obj["objectType"],
 						"intermediateObjectType": receptacle_obj["objectType"]
 					})
+
 
 
 
@@ -476,18 +562,27 @@ class CookingEnv:
 				})
 		if return_language_tags:
 			action_language_tags = [self.action_language_templates[action["action"]].format(**self.sanitize_object_names(action)) for action in possible_actions]
-			return possible_actions, action_language_tags
+			if remove_duplicates:
+				new_actions = []
+				new_language_tags = []
+				for action, language_tag in zip(possible_actions, action_language_tags):
+					if language_tag not in new_language_tags:
+						new_actions.append(action)
+						new_language_tags.append(language_tag)
+			return new_actions, new_language_tags
 		else:
 			return possible_actions
 
 	def parse_action(self,action,mode="closest"):
 		if mode == "closest":
 			if action["action"] == "PickupObject":
-				return self.pickup_obj(action["objectType"])
+				return self.pickup_obj(action["objectType"], mode=mode, verbose=False, penalize_objects_in_goal = True, penalize_objects_in_closed_receptacles = True)
 			elif action["action"] == "PutObjectRecursive":
-				return self.obj_interact(action["objectType"],"PutObject")
+				return self.obj_interact(action["objectType"],"PutObject", mode=mode, verbose=False, penalize_objects_in_goal = True, penalize_objects_in_closed_receptacles = True)
+			elif action["action"] == "AddObject":
+				return self.add_object(action["objectType"],self.goal_object_ID, mode=mode, verbose=False, penalize_objects_in_goal = True, penalize_objects_in_closed_receptacles = True)
 			else:
-				return self.obj_interact(action["objectType"],action["action"])
+				return self.obj_interact(action["objectType"],action["action"], mode=mode, verbose=False, penalize_objects_in_goal = True, penalize_objects_in_closed_receptacles = True)
 		else:
 			raise NotImplementedError
 
@@ -555,7 +650,12 @@ class CookingEnv:
 		return success, objects_info, agent_info
 
 	def load_task_state(self,task_dict, action_index):
+		# print(action_index, task_dict["valid_start_indexes"])
 		assert action_index in task_dict["valid_start_indexes"]
+		self.goal_object_name = task_dict["goal_object_name"]
+		self.goal_object_type = task_dict["goal_object_type"]
+		self.goal_object_ID = self.get_closest_obj(self.goal_object_type, penalize_objects_in_goal = False, penalize_objects_in_closed_receptacles = True)
+
 
 
 		self.current_task_dict = task_dict
@@ -595,9 +695,6 @@ class CookingEnv:
 		return self.history
 
 
-		
-
-
 
 def find_compatible_environments(task_dict,scene_nums):
 	valid_scenes = []
@@ -618,6 +715,8 @@ def find_compatible_environments(task_dict,scene_nums):
 
 		if valid_scene:
 			valid_scenes.append(scene_num)
+			print("Scene {} is compatible".format(scene_name))
+		env.close()
 	return valid_scenes
 
 def setup_environment(scene_name, task_name, start_index, task_version = 0, history = "gt"):
@@ -639,14 +738,24 @@ def setup_environment(scene_name, task_name, start_index, task_version = 0, hist
 
 
 def main():
-	successful_floorplans = [2, 3, 6, 9, 11, 12, 14, 15, 17, 23, 28, 29, 30]
+	task_dict_path = "Tasks/Make_A_BLT_0_abridged.json"
+	with open(task_dict_path, 'r') as file:
+		task_dict = json.load(file)
+	# scene_nums = list(range(1,31))
+	scene_nums = [31]
+	valid_scenes = find_compatible_environments(task_dict,scene_nums)
+	print(valid_scenes)
+	1/0
+
+
+	successful_floorplans = [1, 2, 3, 8, 9, 11, 12, 14, 16, 22, 23, 28, 29, 30]
 	# task_dict_path = "Tasks/Make_A_BLT_0.json"
 	# with open(task_dict_path, 'r') as file:
 	# 	task_dict = json.load(file)
 	# scene_nums = list(range(1,31))
 	# valid_scenes = find_compatible_environments(task_dict,scene_nums)
 	# print(valid_scenes)
-	env = setup_environment("FloorPlan2", "make a blt", 17)
+	env = setup_environment("FloorPlan2", "make a blt", 8)
 	actions, action_language_tags = env.generate_possible_actions(return_language_tags=True)
 	# print(env.generate_language_predicates())
 	print(action_language_tags)

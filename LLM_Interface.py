@@ -46,9 +46,15 @@ class transformers_interface:
 		)
 		self.model.eval()
 		self.model.half()
+		self.model.generation_config.pad_token_id = self.tokenizer.eos_token_id
+		print("Model loaded")
 
-		self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-		self.model.resize_token_embeddings(self.model.config.vocab_size + 1)
+		# self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+		# self.model.resize_token_embeddings(self.model.config.vocab_size + 1)
+		self.yes_token_id = self.tokenizer.convert_tokens_to_ids("yes")
+		self.no_token_id = self.tokenizer.convert_tokens_to_ids("no")
+		print("Yes token id: ", self.yes_token_id)
+		print("No token id: ", self.no_token_id)
 
 	def get_num_tokens(self, prompt):
 		assert isinstance(prompt, str)
@@ -71,6 +77,7 @@ class transformers_interface:
 			batch = self.tokenizer(context, return_tensors="pt")
 			# Print num tokens in prompt
 			print("Num tokens in prompt: {}".format(batch['input_ids'].shape[1]))
+		# print("Batch: ", batch)
 		batch = {k: v.cuda() for k, v in batch.items()}
 		# print("INPUT IDS:", batch['input_ids'])
 
@@ -92,6 +99,22 @@ class transformers_interface:
 
 		
 
+		return(output_text)
+
+	def generate_chat(self,messages, num_tokens = 400, sampling = True):
+
+		batch = self.tokenizer.apply_chat_template(messages, tokenize = True, return_tensors="pt", add_generation_prompt=True).cuda()
+		print("Batch device: ", batch.get_device())
+		# batch = {k: v.cuda() for k, v in batch.item()}
+		# print("INPUT IDS:", batch['input_ids'])
+
+		output = self.model.generate(
+			batch,
+			do_sample=sampling,
+			max_new_tokens=num_tokens,
+			eos_token_id=self.tokenizer.eos_token_id,
+		)
+		output_text = self.tokenizer.batch_decode(output[:,batch.shape[1]:], skip_special_tokens=True)
 		return(output_text)
 	
 
@@ -117,112 +140,7 @@ class transformers_interface:
 		# print("Generated: {}".format(new_text))
 		return new_text, success
 	
-	def eval_log_probs_old_old(self, prompt, queries, normalize_by_length = True):
-		batch = self.tokenizer(prompt, return_tensors="pt")
-		batch = {k: v.cuda() for k, v in batch.items()}
-		input_length = batch['input_ids'].shape[1]
-		# print("Input length: {}".format(input_length))
-		force_tokens = self.tokenizer(queries)["input_ids"]
-
-		all_transition_scores = []
-		all_generated_tokens = []
-		for i in range(len(queries)):
-
-			f_tokens = [force_tokens[i]]
-
-			output = self.model.generate(
-				**batch,
-				do_sample=False,
-				# top_p=0.9,
-				repetition_penalty=1.1,
-				max_new_tokens=len(f_tokens[0]),
-				eos_token_id=self.tokenizer.eos_token_id,
-				return_dict_in_generate=True,
-				output_scores=True,
-				force_words_ids = f_tokens,
-				num_beams=2,
-				num_return_sequences=1,
-			)
-			transition_scores = self.model.compute_transition_scores(output.sequences, output.scores, output.beam_indices, normalize_logits=False)
-			all_transition_scores.append(transition_scores[0,:].cpu())
-			all_generated_tokens.append(output.sequences[0,batch['input_ids'].shape[1]:].cpu())
-
-		probs = np.zeros(len(queries))
-		for i in range(len(queries)):
-			tokens = all_generated_tokens[i].reshape(-1,1)
-			scores = all_transition_scores[i]
-			decoded_tokens = np.array(self.tokenizer.batch_decode(tokens, skip_special_tokens=True))
-			scores[np.where(decoded_tokens == '')] = 0.
-			log_prob_sum = np.sum(scores.numpy())
-			if normalize_by_length:
-				# normalize by number of nonzero tokens
-				log_prob_sum = log_prob_sum / np.count_nonzero(scores)
-			probs[i] = np.exp(log_prob_sum)
-		return probs
 	
-	
-
-	def eval_log_probs_old(self, prompt, queries, normalize_by_length = True, verbose = False):
-		batch = self.tokenizer(prompt, return_tensors="pt")
-		batch = {k: v.cuda() for k, v in batch.items()}
-		input_length = batch['input_ids'].shape[1]
-		print("Num input tokens: {}".format(input_length))
-
-		query_trie, tokened_queries = get_query_trie(self.tokenizer,queries)
-		max_token_len = max([len(e) for e in tokened_queries])
-		prefix_allowed_tokens_fn=filter_phrases_by_trie(input_length, query_trie, self.tokenizer, verbose = verbose)
-
-		# output = self.model.generate(
-		#     **batch,
-		#     return_dict_in_generate=True,
-		#     output_scores=True,
-		#     num_beams=len(queries),
-		#     num_return_sequences=len(queries),
-		#     no_repeat_ngram_size=3,
-		#     max_new_tokens=256,
-		#     remove_invalid_values=True,
-		#     prefix_allowed_tokens_fn=prefix_allowed_tokens_fn,
-		#     # stopping_criteria=stopping_criteria,
-		#     early_stopping=True,
-		#     repetition_penalty=1.2,
-		#     top_p=0.9,
-		#     top_k=len(queries),
-		#     temperature=0.0
-		# )
-		output = self.model.generate(
-			**batch,
-			return_dict_in_generate=True,
-			output_scores=True,
-			num_beams=len(queries),
-			num_return_sequences=len(queries),
-			# no_repeat_ngram_size=None,
-			max_new_tokens=max_token_len,
-			remove_invalid_values=True,
-			prefix_allowed_tokens_fn=prefix_allowed_tokens_fn,
-		)
-
-		transition_scores = self.model.compute_transition_scores(
-			output.sequences, output.scores, output.beam_indices, normalize_logits=False
-		)
-		# print(transition_scores)
-
-		generated_tokens = output.sequences[:, input_length:]
-		transition_scores = transition_scores.cpu()
-		generated_tokens = generated_tokens.cpu()
-
-		probs = np.zeros(len(queries))
-		for i in range(len(queries)):
-			tokens = generated_tokens[i,:].reshape(-1,1)
-			scores = transition_scores[i]
-			decoded_tokens = np.array(self.tokenizer.batch_decode(tokens, skip_special_tokens=True))
-			print("Decoded tokens: ", decoded_tokens)
-			scores[np.where(decoded_tokens == '')] = 0.
-			log_prob_sum = np.sum(scores.numpy())
-			if normalize_by_length:
-				# normalize by number of nonzero tokens
-				log_prob_sum = log_prob_sum / np.count_nonzero(scores)
-			probs[i] = np.exp(log_prob_sum)
-		return probs
 
 	def to_tokens_and_logprobs(self,input_texts, return_tokens=False):
 		batch = self.tokenizer(input_texts, padding=True, return_tensors="pt")
@@ -273,10 +191,29 @@ class transformers_interface:
 			probs[i] = np.exp(prob)
 		return probs
 
+	def yes_no_question(self, prompt):
+		inputs = self.tokenizer(prompt, return_tensors="pt")
+		inputs = {k: v.cuda() for k, v in inputs.items()}
+		outputs = self.model.generate(**inputs, max_new_tokens=1, return_dict_in_generate=True, output_scores=True, output_logits = True, eos_token_id=self.tokenizer.eos_token_id)
+		# print(outputs)
+		logits = outputs['logits'][0]
+		# print(logits)
+		# log_probs = torch.log_softmax(logits, dim=-1).detach()
+		log_probs = logits
+		yes_prob = np.exp(log_probs[0][self.yes_token_id].item())
+		no_prob = np.exp(log_probs[0][self.no_token_id].item())
+		total_prob = yes_prob + no_prob
+		# print("Yes prob: {}, No prob: {}".format(yes_prob, no_prob))
+		yes_prob = yes_prob / total_prob
+		no_prob = no_prob / total_prob
+		return yes_prob, no_prob
 
+	def action_probs_yn(self, prompt, actions):
+		probabilities = [self.yes_no_question(prompt.replace('[action]',action))[0] for action in actions]
+		probabilities = np.array(probabilities)
+		probabilities = probabilities / np.sum(probabilities)
+		return probabilities
 
-			
-				
 
 	
 	def save_cache(self):
@@ -399,8 +336,18 @@ if __name__ == "__main__":
 	# # print("Queries: ", queries)
 	# # query_probs = interface.eval_log_probs_old(prompt, queries, verbose = True)
 	# # print(query_probs)
-	LLAMA_PATH = "/media/mverghese/Mass Storage/models/Llama-3-8b-hf/"
-	llm = transformers_interface(LLAMA_PATH,cuda_devices = [0])
-	queries = ["One plus one is two", "Good morning", "Hello, how are you?"]
-	batch = llm.to_tokens_and_logprobs(queries)
-	print(batch)
+	LLAMA_PATH = "/home/mverghese/Models/Llama-3.1-8B-Instruct/"
+	llm = transformers_interface(LLAMA_PATH,cuda_devices = [0,1])
+	messages = [
+			   {"role": "system", "content": "You are an assitant designed to help people with household tasks. Do not be verbose. Answer the question with no added qualifications or caveats. Just directly provide the answer."},
+			   {"role": "user", "content": "Help me make a Bacon, Lettuce and Tomato sandwich. List the possible steps separated by commas."},
+
+			   ]
+	# prompt = "List the common steps to make a Bacon, Lettuce and Tomato sandwich. Separate the steps by commas."
+	response = llm.generate_chat(messages,num_tokens = 512)
+	# response = llm.generate(prompt,num_tokens = 512)
+	print(response)
+	# yes_prob, no_prob = llm.yes_no_question(prompt)
+	# print("Yes prob: {}, No prob: {}".format(yes_prob, no_prob))
+	# output = llm.generate(prompt,num_tokens = 128)
+	# print(output)
