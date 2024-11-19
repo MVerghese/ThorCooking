@@ -9,6 +9,7 @@ import time
 import numpy as np
 from LLM_Interface import transformers_interface
 from Environment import CookingEnv
+
 # import LaViLa_Interface
 # from utils import load_video_frames_cv2, get_video_metadata
 import json
@@ -28,13 +29,19 @@ from transformers import Blip2Processor, Blip2Model, Blip2ForConditionalGenerati
 # model = AutoModel.from_pretrained("Efficient-Large-Model/Llama-3-VILA1.5-8B")
 
 processor = Blip2Processor.from_pretrained("Salesforce/blip2-flan-t5-xl")
-model = Blip2ForConditionalGeneration.from_pretrained("Salesforce/blip2-flan-t5-xl", device_map="auto")
+model = Blip2ForConditionalGeneration.from_pretrained(
+    "Salesforce/blip2-flan-t5-xl", device_map="auto"
+)
 
-img_url = 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/demo.jpg' 
-raw_image = Image.open(requests.get(img_url, stream=True).raw).convert('RGB')
+img_url = "https://storage.googleapis.com/sfr-vision-language-research/BLIP/demo.jpg"
+raw_image = Image.open(requests.get(img_url, stream=True).raw).convert("RGB")
 
-img1 = Image.open("/media/atkeonlab-3/Mass Storage/EPIC-KITCHENS_Processed/cropped_images/P01/P01_01/P01_01_0000000839_open_fridge.jpg")
-img2 = Image.open("/media/atkeonlab-3/Mass Storage/EPIC-KITCHENS_Processed/cropped_images/P01/P01_01/P01_01_0000000983_holding_celery.jpg")
+img1 = Image.open(
+    "/media/atkeonlab-3/Mass Storage/EPIC-KITCHENS_Processed/cropped_images/P01/P01_01/P01_01_0000000839_open_fridge.jpg"
+)
+img2 = Image.open(
+    "/media/atkeonlab-3/Mass Storage/EPIC-KITCHENS_Processed/cropped_images/P01/P01_01/P01_01_0000000983_holding_celery.jpg"
+)
 images = [img1, img2]
 
 question = "Give a description for each of the images provided"
@@ -42,7 +49,6 @@ inputs = processor(images, question, return_tensors="pt").to("cuda")
 
 out = model.generate(**inputs)
 print(processor.decode(out[0], skip_special_tokens=True))
-
 
 
 # from transformers import Blip2Processor, Blip2Model, Blip2ForConditionalGeneration
@@ -71,4 +77,3 @@ print(processor.decode(out[0], skip_special_tokens=True))
 
 
 # img_array = np.array(img)
-

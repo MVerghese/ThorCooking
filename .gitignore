@@ -1,8 +1,10 @@
 /SeViLA
 /Videos
 /__pycache__
-
+/Video-LLaVA
+/LaViLa
 /bitsandbytes/*
 
 constraints/*
 summaries/*
+EPIC_100_train.csv

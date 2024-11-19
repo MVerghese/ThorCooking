@@ -1,7 +1,5 @@
 {
 	"thor_objects":["Plate","Lettuce","Tomato","BreadSliced"],
-	"goal_object_name":"Sandwich",
-	"goal_object_type":"Plate",
 	"thor_object_success_condition":[
 		{
 			"object":"CounterTop",

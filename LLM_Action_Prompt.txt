@@ -1,0 +1,13 @@
+USER: <video> The set of possible actions the user might be performing in this video are [actions].
+
+What are the top 3 actions the user might be performing? 
+
+Respond only in JSON that satisfies the Response type:
+type ResponseList = [Response_1, Response_2, ..., Response_3] 
+type Response = {
+action: str;
+confidence: float;
+} 
+
+Provide {action} as one of the actions in the set and the {confidence} of the action given the video (on a scale from 0 to 1)
+ASSISTANT:

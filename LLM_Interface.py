@@ -9,23 +9,26 @@ from accelerate import infer_auto_device_map, disk_offload
 import numpy as np
 
 from typing import Dict, List, AnyStr, Union
+
 # import cv2
 
-'''
+"""
 Interface for LLM
 Contains the following:
 - model_name: path to model
 - cuda_devices
 - tokenizer
 - save_dir # IF YOU ARE RUNNING A 70B MODEL, YOU NEED TO CHANGE THIS TO A FOLDER IN YOUR PRIVATE SPACE (and make sure the folder exists)
-'''
+"""
 
 
 class transformers_interface:
-    def __init__(self,
-                 model_name: str = "/checkpoint/mverghese/pretrained_models/llama2/Llama-2-7b-hf",
-                 cuda_devices: List[int] = [0, 1],
-                 save_dir: str = "/home/atkesonlab2/models/cache"):
+    def __init__(
+        self,
+        model_name: str = "/media/atkeonlab-3/Mass Storage/models/Llama-3-8b-chat-hf",
+        cuda_devices: List[int] = [0, 1],
+        save_dir: str = "/media/atkeonlab-3/Mass Storage/models/cache",
+    ):
         self.model_name = model_name
         self.cuda_devices = cuda_devices
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(
@@ -36,46 +39,58 @@ class transformers_interface:
         for i in range(torch.cuda.device_count()):
             device_mem = torch.cuda.get_device_properties(i).total_memory
             if i in cuda_devices:
-                mem_map[i] = "%iGiB" % (device_mem // 1024 ** 3)
+                mem_map[i] = "%iGiB" % (device_mem // 1024**3)
             else:
                 mem_map[i] = "0GiB"
 
         self.save_dir = save_dir
+        # try:
+        #     os.mkdir(save_dir)
+        # except FileExistsError:
+        #     pass
         self.model = transformers.AutoModelForCausalLM.from_pretrained(
-            model_name, low_cpu_mem_usage=True, device_map="auto", offload_folder=save_dir, torch_dtype=torch.bfloat16
+            model_name,
+            low_cpu_mem_usage=True,
+            device_map="balanced",
+            max_memory=mem_map,
+            offload_folder=save_dir,
+            torch_dtype=torch.bfloat16,
         )
         self.model.eval()
         self.model.half()
-        self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-        self.model.generation_config.pad_token_id = self.tokenizer.pad_token_id
+        self.model.generation_config.pad_token_id = self.tokenizer.eos_token_id
 
-    '''
-    returns the number of tokens present in the prompt
-    '''
+        self.yes_token_id = self.tokenizer.convert_tokens_to_ids("yes")
+        self.no_token_id = self.tokenizer.convert_tokens_to_ids("no")
+        print("Yes token id: ", self.yes_token_id)
+        print("No token id: ", self.no_token_id)
 
-    def get_num_tokens(self, prompt: str) -> int:
+    def get_num_tokens(self, prompt):
         assert isinstance(prompt, str)
         batch = self.tokenizer(prompt, return_tensors="pt")
         batch = {k: v.cuda() for k, v in batch.items()}
-        return batch['input_ids'].shape[1]
+        return batch["input_ids"].shape[1]
 
-    '''
+    """
     generates next set of tokens from prompt
-    '''
+    """
 
-    def generate(self, prompt: Union[str, List[str]], num_tokens=400, top_p=.9, sampling=True, stopword=None) -> Union[str, List[str]]:
+    def generate(
+        self,
+        prompt: Union[str, List[str]],
+        num_tokens=400,
+        top_p=0.9,
+        sampling=True,
+        stopword=None,
+    ) -> Union[str, List[str]]:
         is_batch = isinstance(prompt, list)
 
         if is_batch:
             context = [str(e).rstrip().lstrip() for e in prompt]
-            batch: Dict = self.tokenizer(
-                context, return_tensors="pt", padding=True)
+            batch: Dict = self.tokenizer(context, return_tensors="pt", padding=True)
         else:
             context = str(prompt).rstrip().lstrip()
             batch: Dict = self.tokenizer(context, return_tensors="pt")
-            # Print num tokens in prompt
-            # print("Num tokens in prompt: {}".format(
-            #     batch['input_ids'].shape[1]))
 
         batch = {k: v.cuda() for k, v in batch.items()}
 
@@ -91,41 +106,71 @@ class transformers_interface:
         # if the prompt is a list
         if is_batch:
             output_text = self.tokenizer.batch_decode(
-                output[:, batch['input_ids'].shape[1]:], skip_special_tokens=True)
+                output[:, batch["input_ids"].shape[1] :], skip_special_tokens=True
+            )
         else:
             output_text = self.tokenizer.batch_decode(
-                output[:, batch['input_ids'].shape[1]:], skip_special_tokens=True)[0]
+                output[:, batch["input_ids"].shape[1] :], skip_special_tokens=True
+            )[0]
             if stopword is not None and stopword in output_text:
-                output_text = output_text[:output_text.index(
-                    stopword)] + stopword
+                output_text = output_text[: output_text.index(stopword)] + stopword
+        return output_text
 
-        return (output_text)
+    def generate_chat(self, messages, num_tokens=400, sampling=True):
 
-    '''
+        batch = self.tokenizer.apply_chat_template(
+            messages, tokenize=True, return_tensors="pt", add_generation_prompt=True
+        ).cuda()
+        print("Batch device: ", batch.get_device())
+
+        output = self.model.generate(
+            batch,
+            do_sample=sampling,
+            max_new_tokens=num_tokens,
+            eos_token_id=self.tokenizer.eos_token_id,
+        )
+        output_text = self.tokenizer.batch_decode(
+            output[:, batch.shape[1] :], skip_special_tokens=True
+        )
+        return output_text
+
+    def generate_choice(self, prompt, choices, sample=False):
+        probs = self.eval_log_probs(prompt, choices)
+        probs = probs / np.sum(probs)
+        if not sample:
+            return choices[np.argmax(probs)], probs
+        else:
+            probs = probs / np.sum(probs)
+            return np.random.choice(choices, p=probs), probs
+
+    """
     Generate next set of tokens from input prompt until stopword is generated
-    '''
+    """
 
-    def generate_stopword_and_verify(self, prompt: str, stopword: str, max_attempts: int = 5):
-        success = False
+    def generate_stopword_and_verify(
+        self, prompt: str, stopword: str, max_attempts: int = 5
+    ):
         # loop until we find a stopword or we have reached the maximum number of attempts
+        success = False
         while not success and max_attempts > 0:
             new_text = self.generate(
-                prompt, num_tokens=64, use_cache=False, stopword=stopword)
+                prompt, num_tokens=64, use_cache=False, stopword=stopword
+            )
             if stopword in new_text:
                 success = True
-                # break
             else:
-                # stopword has not been found & we have used an attempt
                 max_attempts -= 1
         return new_text, success
 
-    '''
+    """
     return tokens & logprobs of tokens
-    '''
+    """
 
-    def to_tokens_and_logprobs(self, input_texts: List[str], return_tokens: bool = False):
+    def to_tokens_and_logprobs(
+        self, input_texts: List[str], return_tokens: bool = False
+    ):
         batch = self.tokenizer(input_texts, padding=True, return_tensors="pt")
-        input_ids = batch['input_ids']
+        input_ids = batch["input_ids"]
         batch = {k: v.cuda() for k, v in batch.items()}
         outputs = self.model(**batch)
         probs = torch.log_softmax(outputs.logits, dim=-1).detach().cpu()
@@ -141,30 +186,43 @@ class transformers_interface:
             for token, p in zip(input_sentence, input_probs):
                 if token not in self.tokenizer.all_special_ids:
                     if return_tokens:
-                        text_sequence.append(
-                            (self.tokenizer.decode(token), p.item()))
+                        text_sequence.append((self.tokenizer.decode(token), p.item()))
                     else:
                         text_sequence.append(p.item())
             batch.append(text_sequence)
         return batch
 
-    '''
+    """
     returns the logprobs of generating the specified queries from the given prompt
-    '''
+    """
 
-    def eval_log_probs(self, prompt: str, queries: List[str], normalize_by_length: bool = True, batch_size: int = None):
-        # self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-        prompt_tokens = self.tokenizer(
-            prompt, return_tensors="pt")["input_ids"]
-        num_prompt_tokens = np.sum(
-            [1 if prompt_tokens[0, i] not in self.tokenizer.all_special_ids else 0 for i in range(prompt_tokens.shape[1])])-1
+    def eval_log_probs(
+        self,
+        prompt: str,
+        queries: List[str],
+        normalize_by_length: bool = True,
+        batch_size: int = None,
+    ):
+        prompt_tokens = self.tokenizer(prompt, return_tensors="pt")["input_ids"]
+        num_prompt_tokens = (
+            np.sum(
+                [
+                    (
+                        1
+                        if prompt_tokens[0, i] not in self.tokenizer.all_special_ids
+                        else 0
+                    )
+                    for i in range(prompt_tokens.shape[1])
+                ]
+            )
+            - 1
+        )
         print("Num prompt tokens: {}".format(num_prompt_tokens))
         sequences = [prompt + query for query in queries]
         if batch_size is not None:
             log_probs = []
             for i in range(0, len(sequences), batch_size):
-                log_probs += self.to_tokens_and_logprobs(
-                    sequences[i:i+batch_size])
+                log_probs += self.to_tokens_and_logprobs(sequences[i : i + batch_size])
 
         else:
             log_probs = self.to_tokens_and_logprobs(sequences)
@@ -172,38 +230,59 @@ class transformers_interface:
         for i in range(len(queries)):
             prob = np.sum(log_probs[i][num_prompt_tokens:])
             if normalize_by_length:
-                prob = prob / (len(log_probs[i])-num_prompt_tokens)
+                prob = prob / (len(log_probs[i]) - num_prompt_tokens)
             probs[i] = np.exp(prob)
         return probs
 
-    '''
-    calls eval_log_probs to choose the most likely choice to be generated from the specified list of choices
-    '''
+    def yes_no_question(self, prompt):
+        inputs = self.tokenizer(prompt, return_tensors="pt")
+        inputs = {k: v.cuda() for k, v in inputs.items()}
+        outputs = self.model.generate(
+            **inputs,
+            max_new_tokens=1,
+            return_dict_in_generate=True,
+            output_scores=True,
+            output_logits=True,
+            eos_token_id=self.tokenizer.eos_token_id,
+        )
+        logits = outputs["logits"][0]
+        log_probs = logits
+        yes_prob = np.exp(log_probs[0][self.yes_token_id].item())
+        no_prob = np.exp(log_probs[0][self.no_token_id].item())
+        total_prob = yes_prob + no_prob
+        # print("Yes prob: {}, No prob: {}".format(yes_prob, no_prob))
+        yes_prob = yes_prob / total_prob
+        no_prob = no_prob / total_prob
+        return yes_prob, no_prob
 
-    def generate_choice(self, prompt: str, choices: List[str], sample: bool = False):
-        probs = self.eval_log_probs(prompt, choices)
-        probs = probs / np.sum(probs)
-        if not sample:
-            return choices[np.argmax(probs)], probs
-        else:
-            probs = probs / np.sum(probs)
-            return np.random.choice(choices, p=probs), probs
+    def action_probs_yn(self, prompt, actions):
+        probabilities = [
+            self.yes_no_question(prompt.replace("[action]", action))[0]
+            for action in actions
+        ]
+        probabilities = np.array(probabilities)
+        probabilities = probabilities / np.sum(probabilities)
+        return probabilities
 
     def save_cache(self):
         pass
 
-    def generate_chat(self,messages, num_tokens = 400, sampling = True):
-        batch = self.tokenizer.apply_chat_template(messages, tokenize = True, return_tensors="pt", add_generation_prompt=True).cuda()
+    def generate_chat(self, messages, num_tokens=400, sampling=True):
+        batch = self.tokenizer.apply_chat_template(
+            messages, tokenize=True, return_tensors="pt", add_generation_prompt=True
+        ).cuda()
         print("Batch device: ", batch.get_device())
 
         output = self.model.generate(
-			batch,
-			do_sample=sampling,
-			max_new_tokens=num_tokens,
-			eos_token_id=self.tokenizer.eos_token_id,
-		)
-        output_text = self.tokenizer.batch_decode(output[:,batch.shape[1]:], skip_special_tokens=True)
-        return(output_text)
+            batch,
+            do_sample=sampling,
+            max_new_tokens=num_tokens,
+            eos_token_id=self.tokenizer.eos_token_id,
+        )
+        output_text = self.tokenizer.batch_decode(
+            output[:, batch.shape[1] :], skip_special_tokens=True
+        )
+        return output_text
 
 
 class Base_Server:
@@ -217,12 +296,12 @@ class Base_Server:
     def prompt_listener(self):
         print("Listening for prompt changes")
 
-        with open(self.prompt_read_file, 'r') as f:
+        with open(self.prompt_read_file, "r") as f:
             text = f.read()
         prev_uuid = text.split("\n")[0]
 
         while True:
-            with open(self.prompt_read_file, 'r') as f:
+            with open(self.prompt_read_file, "r") as f:
                 text = f.read()
             uuid = text.split("\n")[0]
             prompt = "\n".join(text.split("\n")[1:])
@@ -236,10 +315,10 @@ class Base_Server:
                 result = self.generate(prompt)
                 print("Time taken: {}".format(time.time() - start_time))
                 out = uuid + "\n" + result
-                with open(self.result_write_file, 'w') as f:
+                with open(self.result_write_file, "w") as f:
                     f.write(out)
                 print("Result: {}".format(result))
-            time.sleep(.25)
+            time.sleep(0.25)
 
     def image_listener(self):
         # clear the image read folder
@@ -248,12 +327,12 @@ class Base_Server:
                 os.remove(os.path.join(self.image_read_folder, file))
         self.image_buffer = []
         index_file = os.path.join(self.image_read_folder, "index.txt")
-        with open(index_file, 'r') as f:
+        with open(index_file, "r") as f:
             text = f.read()
         prev_uuid = text.split("\n")[0]
         print("Listening for new images")
         while True:
-            with open(index_file, 'r') as f:
+            with open(index_file, "r") as f:
                 text = f.read()
             uuid = text.split("\n")[0]
             image_indicies = "\n".join(text.split("\n")[1:])
@@ -262,22 +341,22 @@ class Base_Server:
                 image_indicies = [int(e) for e in image_indicies.split(",")]
                 for image_index in image_indicies:
                     image_file = os.path.join(
-                        self.image_read_folder, str(image_index).zfill(4) + ".jpg")
+                        self.image_read_folder, str(image_index).zfill(4) + ".jpg"
+                    )
                     print("New image: {}".format(image_file))
                     image = cv2.imread(image_file)  # type: ignore
-                    image = cv2.cvtColor(
-                        image, cv2.COLOR_BGR2RGB)  # type: ignore
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # type: ignore
                     if image is None:
                         print("Image is none")
                         continue
                     else:
                         print("Image shape: {}".format(image.shape))
                     self.image_buffer.append(image)
-            time.sleep(.25)
+            time.sleep(0.25)
 
     def generate(self, prompt):
         # raise NotImplementedError
-        return ("This is a test result")
+        return "This is a test result"
 
     def run(self):
         self.prompt_listener()
@@ -318,15 +397,23 @@ if __name__ == "__main__":
     # # print("Queries: ", queries)
     # # query_probs = interface.eval_log_probs_old(prompt, queries, verbose = True)
     # # print(query_probs)
-    LLAMA_PATH = "/home/atkesonlab2/models/llama-3-8b-quantized/"
-    LLAMA_PATH = "SweatyCrayfish/llama-3-8b-quantized"
-    LLAMA_PATH = "/home/atkesonlab2/models/gemma-2-2b-it"
-    llm = transformers_interface(LLAMA_PATH, cuda_devices=[0])
-    queries = ["One plus one is two", "Good morning", "Hello, how are you?"]
-    prompt = "what is the sum of one and one"
-    query_probs = llm.eval_log_probs(prompt, queries)
-    llm.generate_choice
-    print(query_probs)
-    # batch = llm.to_tokens_and_logprobs(queries)
-    # print(batch)
-    # print(llm.generate("this is a test", num_tokens = 50))
+    LLAMA_PATH = "/media/atkeonlab-3/Mass Storage/models/Llama-3-8b-chat-hf"
+    llm = transformers_interface(LLAMA_PATH, cuda_devices=[0, 1])
+    messages = [
+        {
+            "role": "system",
+            "content": "You are an assitant designed to help people with household tasks. Do not be verbose. Answer the question with no added qualifications or caveats. Just directly provide the answer.",
+        },
+        {
+            "role": "user",
+            "content": "Help me make a Bacon, Lettuce and Tomato sandwich. List the possible steps separated by commas.",
+        },
+    ]
+    # prompt = "List the common steps to make a Bacon, Lettuce and Tomato sandwich. Separate the steps by commas."
+    response = llm.generate_chat(messages, num_tokens=512)
+    # response = llm.generate(prompt,num_tokens = 512)
+    print(response)
+    # yes_prob, no_prob = llm.yes_no_question(prompt)
+    # print("Yes prob: {}, No prob: {}".format(yes_prob, no_prob))
+    # output = llm.generate(prompt,num_tokens = 128)
+    # print(output)
