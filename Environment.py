@@ -168,6 +168,7 @@ class CookingEnv:
         # if angle_diff > 2*np.pi:
         #     print(angle_diff)
         #     print(robot_angle, rob_to_obj_angle)
+        #     1/0
         # # print(angle_diff)
         # angle_diff = angle_diff if angle_diff < np.pi else 2*np.pi - angle_diff
         robot_vec = np.array([np.cos(robot_angle), np.sin(robot_angle)])
@@ -890,11 +891,11 @@ class CookingEnv:
         action_segments = self.current_task_dict["action_segments"]
         self.history = [segment["action_text"] for segment in action_segments]
 
-        def set_narration_dict(self, narration_dict):
-            self.history = [element["narrations"] for element in narration_dict]
+    def set_narration_dict(self, narration_dict):
+        self.history = [element["narrations"] for element in narration_dict]
 
-        def get_history(self):
-            return self.history
+    def get_history(self):
+        return self.history
 
 
 def find_compatible_environments(task_dict, scene_nums):
@@ -1000,6 +1001,7 @@ def main():
         print(env.get_obj_in_frame((0.5, 0.3)))
         # print(env.is_visible("HousePlant|-01.95|+00.89|-02.52"))
         # print(env.get_object_distance("HousePlant|-01.95|+00.89|-02.52"))
+
         time.sleep(0.5)
 
 
