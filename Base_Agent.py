@@ -9,11 +9,11 @@ from utils import load_video_frames_cv2, get_video_metadata
 import json
 import torch
 from typing import List, Dict
-LLAMA_PATH = "gemma-2-2b-it"
-MODEL_PATH = "/home/atkesonlab2/models/"
+LLAMA_PATH = "/media/atkeonlab-3/Mass Storage/models/Llama-3-8b-hf"
+MODEL_PATH = "/media/atkeonlab-3/Mass Storage/models"
 
-LLAMA_PATH = "/home/atkesonlab2/models/Llama-3.2-1B-Instruct"
-MODEL_PATH = "/home/atkesonlab2/models"
+# LLAMA_PATH = "/home/atkesonlab2/models/Llama-3.2-1B-Instruct"
+# MODEL_PATH = "/home/atkesonlab2/models"
 
 
 class Base_Agent:
@@ -43,7 +43,7 @@ class Base_Agent:
     def narrate(self, frames, num_sequences=1):
         if isinstance(frames[0], np.ndarray):
             torch_images = []
-            for image in images:
+            for image in frames:
                 torch_image = torch.from_numpy(image).permute(
                     2, 0, 1).unsqueeze(0).float()
                 torch_images.append(torch_image)
@@ -87,19 +87,19 @@ class Base_Agent:
             out.append(narr_dict)
         return out
 
-        def narrate_video_segmented(self, video_path, segments, narrations_per_clip=1):
-            out = []
-            for segment in segments:
-                frame_nums = np.linspace(
-                    segment[0], segment[1], self.frames_per_clip, dtype=int)
-                frames = load_video_frames_cv2(video_path, frame_nums)
-                narrations = self.narrate(frames, narrations_per_clip)
-                narr_dict = {}
-                narr_dict['start_frame'] = segment[0]
-                narr_dict['stop_frame'] = segment[1]
-                narr_dict['narrations'] = narrations
-                out.append(narr_dict)
-            return out
+    def narrate_video_segmented(self, video_path, segments, narrations_per_clip=1):
+        out = []
+        for segment in segments:
+            frame_nums = np.linspace(
+                segment[0], segment[1], self.frames_per_clip, dtype=int)
+            frames = load_video_frames_cv2(video_path, frame_nums)
+            narrations = self.narrate(frames, narrations_per_clip)
+            narr_dict = {}
+            narr_dict['start_frame'] = segment[0]
+            narr_dict['stop_frame'] = segment[1]
+            narr_dict['narrations'] = narrations
+            out.append(narr_dict)
+        return out
 
     def select_few_shot_examples(self, task, num_retrievals):
         tasks = [self.cross_task_narrations[video]["task"]
@@ -210,7 +210,7 @@ class Base_Agent:
 
         print(prompt)
         generated_text = self.llm.generate(
-            prompt, num_tokens=400, use_cache=False)
+            prompt, num_tokens=400)
         print("GENERATED TEXT")
         print(generated_text)
         # generated_text = "1. A person " + generated_text
@@ -247,38 +247,38 @@ class Base_Agent:
             grouped_narrations, goal=task)
         return summarized_narrations
 
-        def select_action(self, task, action_list, history, probablistic_selection=False, verbose=False):
-            examples = self.select_few_shot_examples(task, 3)
-            prompt = self.build_prompt(task, history, examples)
-            print("Action History: ")
-            print(history)
-            completion = self.llm.generate(
-                prompt, num_tokens=50, use_cache=False)
-            next_action = completion.split("\n")[0]
-            print("next action: ", next_action)
-            # prompt = "A person is currently attempting to " + task + ". The next they would like to take is: " + next_action + "\n"
-            # prompt += "The following isa list of possible actions they can take: " + "\n".join(list(set(action_list))) + "\n"
-            # prompt += "Which action should they take next? \n"
-            # # print("LLM Completion: " + completion)
-            # probs = self.llm.eval_log_probs(prompt, action_list, batch_size = 1)
-            # probs/=np.sum(probs)
-            # if verbose:
-            # 	for i, action in enumerate(list(set(action_list))):
-            # 		print("Action: ", action, "Prob: ", probs[i])
+    def select_action(self, task, action_list, history, probablistic_selection=False, verbose=False):
+        examples = self.select_few_shot_examples(task, 3)
+        prompt = self.build_prompt(task, history, examples)
+        print("Action History: ")
+        print(history)
+        completion = self.llm.generate(
+            prompt, num_tokens=50, use_cache=False)
+        next_action = completion.split("\n")[0]
+        print("next action: ", next_action)
+        # prompt = "A person is currently attempting to " + task + ". The next they would like to take is: " + next_action + "\n"
+        # prompt += "The following isa list of possible actions they can take: " + "\n".join(list(set(action_list))) + "\n"
+        # prompt += "Which action should they take next? \n"
+        # # print("LLM Completion: " + completion)
+        # probs = self.llm.eval_log_probs(prompt, action_list, batch_size = 1)
+        # probs/=np.sum(probs)
+        # if verbose:
+        # 	for i, action in enumerate(list(set(action_list))):
+        # 		print("Action: ", action, "Prob: ", probs[i])
 
-            action_list_embedds = self.text_embedd_model.encode(action_list)
-            next_action_embedd = self.text_embedd_model.encode(next_action)
-            similarity = compute_cos_similarity(
-                action_list_embedds, next_action_embedd)
-            # probs = np.exp(similarity-1)
+        action_list_embedds = self.text_embedd_model.encode(action_list)
+        next_action_embedd = self.text_embedd_model.encode(next_action)
+        similarity = compute_cos_similarity(
+            action_list_embedds, next_action_embedd)
+        # probs = np.exp(similarity-1)
 
-            if not probablistic_selection:
-                best_index = np.argmax(similarity)
-            else:
-                probs = np.exp(similarity-1)
-                best_index = np.random.choice(len(action_list), p=probs)
-            # print("Action: ", action_list[best_index])
-            return action_list[best_index], similarity[best_index], best_index
+        if not probablistic_selection:
+            best_index = np.argmax(similarity)
+        else:
+            probs = np.exp(similarity-1)
+            best_index = np.random.choice(len(action_list), p=probs)
+        # print("Action: ", action_list[best_index])
+        return action_list[best_index], similarity[best_index], best_index
 
 
 def main():
@@ -310,7 +310,7 @@ def main():
     # print(examples)
     # prompt = agent.build_prompt("make a blt",["Get bread","Get lettuce","Get tomato"],examples)
     # print(prompt)
-    narration_path = "blt_0_narrations.json"
+    narration_path = "Narrations/blt_0_narrations_lavila.json"
     with open(narration_path, 'r') as file:
         narration_list = json.load(file)
     narration_list = [narration['narrations'] for narration in narration_list]
@@ -322,3 +322,14 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+'''
+media/atkeonlab-3/Mass Storage$ ls
+epic-kitchens-100-annotations   extract_file_index        Mrinal_EPIC-KITCHENS
+EPIC-KITCHENS_Camera_Poses      extract_file_index.zip    Mrinals_Files
+epic-kitchens-download-scripts  flow_encoder_checkpoints  unpack_frames.py
+EPIC-KITCHENS_Processed         models
+
+
+'''

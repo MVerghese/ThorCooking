@@ -46,6 +46,8 @@ class transformers_interface:
         )
         self.model.eval()
         self.model.half()
+        self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+        self.model.generation_config.pad_token_id = self.tokenizer.pad_token_id
 
     '''
     returns the number of tokens present in the prompt
@@ -72,8 +74,8 @@ class transformers_interface:
             context = str(prompt).rstrip().lstrip()
             batch: Dict = self.tokenizer(context, return_tensors="pt")
             # Print num tokens in prompt
-            print("Num tokens in prompt: {}".format(
-                batch['input_ids'].shape[1]))
+            # print("Num tokens in prompt: {}".format(
+            #     batch['input_ids'].shape[1]))
 
         batch = {k: v.cuda() for k, v in batch.items()}
 
@@ -151,7 +153,7 @@ class transformers_interface:
     '''
 
     def eval_log_probs(self, prompt: str, queries: List[str], normalize_by_length: bool = True, batch_size: int = None):
-        self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+        # self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
         prompt_tokens = self.tokenizer(
             prompt, return_tensors="pt")["input_ids"]
         num_prompt_tokens = np.sum(
@@ -189,6 +191,19 @@ class transformers_interface:
 
     def save_cache(self):
         pass
+
+    def generate_chat(self,messages, num_tokens = 400, sampling = True):
+        batch = self.tokenizer.apply_chat_template(messages, tokenize = True, return_tensors="pt", add_generation_prompt=True).cuda()
+        print("Batch device: ", batch.get_device())
+
+        output = self.model.generate(
+			batch,
+			do_sample=sampling,
+			max_new_tokens=num_tokens,
+			eos_token_id=self.tokenizer.eos_token_id,
+		)
+        output_text = self.tokenizer.batch_decode(output[:,batch.shape[1]:], skip_special_tokens=True)
+        return(output_text)
 
 
 class Base_Server:
