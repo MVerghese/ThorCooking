@@ -81,47 +81,26 @@ def test_single_eval(task, env, start_idx, selection_strategy="sim"):
 
 
 def main():
-    test_single_eval("make a blt", 3, 5, selection_strategy="prob")
-    successful_floorplans = [1, 2, 3, 8, 9, 11, 12, 14, 16, 22, 23, 28, 29, 30]
-    start_indices = [4, 5, 6, 7]
-    # start_indices = [8,10,13,15]
-    # successful_floorplans = [2]
-    # start_indices = [4]
-    # agent = Base_Agent.Base_Agent(load_llm = True, load_narrator = False)
-    # success_array, success_per_env, success_per_start, success_rate = full_eval("make a blt",successful_floorplans,start_indices, evals = 5, selection_strategy = "sim")
-    # print(success_array)
-    # print(success_per_env)
-    # print(success_per_start)
-    # print(success_rate)
-    # save_path = "Results/GT_History_LLM_Sim_Selection_BLT_Abridged/"
-    # if not os.path.exists(save_path):
-    # 	os.makedirs(save_path)
-    # np.save(save_path + "success_array.npy",success_array)
-    # np.save(save_path + "success_per_env.npy",success_per_env)
-    # np.save(save_path + "success_per_start.npy",success_per_start)
-    # np.save(save_path + "success_rate.npy",success_rate)
-
-    # success_array, success_per_env, success_per_start, success_rate = full_eval(
-    #     "make a blt",
-    #     successful_floorplans,
-    #     start_indices,
-    #     evals=5,
-    #     selection_strategy="prob",
-    # )
-    # print(success_array)
-    # print(success_per_env)
-    # print(success_per_start)
-    # print(success_rate)
-    # save_path = (
-    #     "Results/GT_History_LLM_Prob_Selection_BLT_Abridged_failed_action_message/"
-    # )
-    # if not os.path.exists(save_path):
-    #     os.makedirs(save_path)
-    # np.save(save_path + "success_array.npy", success_array)
-    # np.save(save_path + "success_per_env.npy", success_per_env)
-    # np.save(save_path + "success_per_start.npy", success_per_start)
-    # np.save(save_path + "success_rate.npy", success_rate)
-
+	test_single_eval("make a blt",3,5, selection_strategy = "prob")
+	1/0
+	successful_floorplans = [1, 2, 3, 8, 9, 11, 12, 14, 16, 22, 23, 28, 29, 30]
+	start_indices = [4,5,6,7]
+	# start_indices = [8,10,13,15]
+	# successful_floorplans = [2]
+	# start_indices = [4]
+	# agent = Base_Agent.Base_Agent(load_llm = True, load_narrator = False)
+	# success_array, success_per_env, success_per_start, success_rate = full_eval("make a blt",successful_floorplans,start_indices, evals = 5, selection_strategy = "sim")
+	# print(success_array)
+	# print(success_per_env)
+	# print(success_per_start)
+	# print(success_rate)
+	# save_path = "Results/GT_History_LLM_Sim_Selection_BLT_Abridged/"
+	# if not os.path.exists(save_path):
+	# 	os.makedirs(save_path)
+	# np.save(save_path + "success_array.npy",success_array)
+	# np.save(save_path + "success_per_env.npy",success_per_env)
+	# np.save(save_path + "success_per_start.npy",success_per_start)
+	# np.save(save_path + "success_rate.npy",success_rate)
 
 if __name__ == "__main__":
     main()
