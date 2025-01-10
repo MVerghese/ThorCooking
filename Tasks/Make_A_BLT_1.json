@@ -72,22 +72,22 @@
 			"object":"Plate",
 			"thor_object":true,
 			"start_frame":746,
-			"end_frame":811 
+			"end_frame":802 
 		},
 		{
 			"action_text":"spread mayonnaise on the sliced bread in the plate",
 			"action":"None",
 			"object":"Mayonnaise",
 			"thor_object":false,
-			"start_frame":812,
-			"end_frame":1355 
+			"start_frame":803,
+			"end_frame":1380 
 		},
 		{
 			"action_text":"pick up the bacon",
 			"action":"PickupObject",
 			"object":"Bacon",
 			"thor_object":false,
-			"start_frame":1356,
+			"start_frame":1381,
 			"end_frame":1509 
 		},
 		{

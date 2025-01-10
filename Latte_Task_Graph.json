@@ -1,0 +1,10 @@
+{
+    "add milk to pitcher": ["steam milk", "clean steam wand", "grind coffee", "prepare portafilter", "pickup mug", "put mug in coffee machine", "turn on coffee machine"],
+    "steam milk": ["clean steam wand", "grind coffee", "add milk to coffee", "prepare portafilter", "pickup mug", "put mug in coffee machine", "turn on coffee machine"],
+    "clean steam wand": ["grind coffee", "add milk to coffee", "steam milk"],
+    "grind coffee": ["prepare portafilter"],
+    "prepare portafilter": ["turn on coffee machine", "pickup mug", "put mug in coffee machine"],
+    "pickup mug": ["put mug in coffee machine", "turn on coffee machine"],
+    "put mug in coffee machine": ["turn on coffee machine", "add milk to coffee"],
+    "turn on coffee machine": ["add milk to coffee", "add milk to pitcher", "steam milk", "clean steam wand", "grind coffee", "prepare portafilter", "pickup mug", "put mug in coffee machine"]
+}

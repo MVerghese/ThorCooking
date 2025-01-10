@@ -1,0 +1,16 @@
+{
+	"Cook the bacon in a pan until crispy, then set aside.": ["Wash the head of lettuce and separate the leaves.", "Remove the cooked bacon from the pan and set aside on a paper towel.", "Add some sliced tomatoes on top of the lettuce.", "Slice the whole tomatoes into thin pieces."],
+	"Wash the head of lettuce and separate the leaves.": ["Slice the tomatoes into thin pieces.", "Slice the head of lettuce into thin pieces.", "Lay two slices of bread on a clean surface."],
+	"Slice the tomatoes into thin pieces.": ["Toast the sliced bread until lightly browned.", "Lay two slices of bread on a clean surface.", "Spread mayonnaise on two slices of bread.", "Slice the tomatoes into thin pieces.", "Assemble the sandwich by placing the second slice of bread on top of the lettuce.", "Wash and dry the head of lettuce, then chop it into bite-sized pieces."],
+	"Toast the sliced bread until lightly browned.": ["Spread a layer of mayonnaise on each toasted bread slice."],
+	"Spread a layer of mayonnaise on each toasted bread slice.": ["Arrange the crispy bacon slices on top of the mayonnaise.", "Arrange the chopped lettuce on one slice of bread with mayonnaise.", "Assemble the sandwich by placing a few lettuce leaves on one slice of bread, followed by a tomato slice, and some bacon pieces.", "Add two or three pieces of tomato on one bread slice."],
+	"Arrange the crispy bacon slices on top of the mayonnaise.": ["Add the sliced tomatoes on top of the bacon."],
+	"Add the sliced tomatoes on top of the bacon.": ["Place the lettuce leaves on top of the tomatoes.", "Place the second slice of bread with mayonnaise on top of the bacon.", "Place the other slice of bread on top to complete the sandwich."],
+	"Place the lettuce leaves on top of the tomatoes.": ["Assemble the sandwich by placing the second bread slice on top.", "Place the cooked bacon on top of the tomato slices."],
+	"Arrange the chopped lettuce on one slice of bread with mayonnaise.": ["Place the tomato slices on top of the lettuce.", "Cut the sandwich in half and serve."],
+	"Lay two slices of bread on a clean surface.": ["Spread a layer of mayonnaise on one slice of bread.", "Place a few slices of cooked bacon on one slice of bread."],
+	"Place the second slice of bread on top to complete the sandwich.": ["Cut the sandwich in half and serve.", "Top with the second slice of bread."],
+	"Place a few slices of cooked bacon on one slice of bread.": ["Add a few slices of lettuce and tomato on top of the bacon.", "Assemble the sandwich by placing the two slices together."],
+	"Assemble the sandwich by placing cooked bacon, lettuce leaves, and tomato slices on one slice of bread with mayonnaise.": ["Place the second slice of bread with mayonnaise on top to complete the sandwich."],
+	"Toast the bread.": ["Spread mayonnaise on two slices of toasted bread."]
+}

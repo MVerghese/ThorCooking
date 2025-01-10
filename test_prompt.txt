@@ -1,0 +1,11 @@
+A user is attempting to complete the task: make a bacon, lettuce, and tomato sandwich. The steps completed so far are: 
+Step 1: cook the bacon
+Step 2: add the bread to plate
+Step 3: spread the mayonnaise
+Step 4: add the bacon to the sandwich
+Additional Information:
+Question: How many slices of tomato are there
+Answer: There are zero slices of tomato, the tomato is whole
+Which of the following is the best next step to complete the task? Answer with the corresponding capital letter?
+
+

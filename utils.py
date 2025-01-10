@@ -69,6 +69,11 @@ def process_vpa_narrations(narration_list):
             narration_dict[narration["video"]]["steps"] = prompt_steps[1:end_index]
     return narration_dict
 
+def compute_entropy(probabilities):
+	# remove zero probabilities
+	probabilities = probabilities[probabilities>0]
+	return -np.sum(probabilities*np.log(probabilities))
+
 
 if __name__ == "__main__":
     # paths = ["Videos/53_video_492_0_none_display.mp4",

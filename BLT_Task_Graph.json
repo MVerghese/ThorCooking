@@ -1,0 +1,12 @@
+{
+	"cook bacon": ["slice bread", "slice tomato", "slice lettuce","add bread to plate"],
+	"slice bread": ["add bread to plate", "slice tomato", "slice lettuce"],
+	"add bread to plate": ["spread mayonnaise", "spread butter"],
+	"spread mayonnaise": ["add bacon", "slice tomato", "slice lettuce"],
+	"spread butter": ["add bacon", "slice tomato", "slice lettuce"],
+	"add bacon": ["slice tomato", "slice lettuce"],
+	"slice tomato": ["add tomato", "slice lettuce"],
+	"add tomato": ["slice lettuce", "add bread to sandwich"],
+	"slice lettuce": ["add lettuce", "slice tomato"],
+	"add lettuce": ["slice tomato", "add bread to sandwich"]
+}
