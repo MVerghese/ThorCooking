@@ -1,0 +1,54 @@
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   Base_Agent.py
+	modified:   Environment.py
+	modified:   Evaluation.py
+	new file:   Fried_Egg_Task_Graph.json
+	modified:   LLM_Interface.py
+	new file:   Results/GT_History_Llama3-2-11B_Iter_MCQ_Selection_BLT_Move_Action/progress.txt
+	new file:   Results/GT_History_Llama3-2-11B_Iter_MCQ_Selection_BLT_Move_Action/success_array.npy
+	new file:   Results/GT_History_Llama3-2-11B_Iter_MCQ_Selection_BLT_Move_Action/success_per_env.npy
+	new file:   Results/GT_History_Llama3-2-11B_Iter_MCQ_Selection_BLT_Move_Action/success_per_start.npy
+	new file:   Results/GT_History_Llama3-2-11B_Iter_MCQ_Selection_BLT_Move_Action/success_rate.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_BLT_Move_Action/progress.txt
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_BLT_Move_Action/success_array.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_BLT_Move_Action/success_per_env.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_BLT_Move_Action/success_per_start.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_BLT_Move_Action/success_rate.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Egg_Task_Graph_Move_Action/progress.txt
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Egg_Task_Graph_Move_Action/success_array.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Egg_Task_Graph_Move_Action/success_per_env.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Egg_Task_Graph_Move_Action/success_per_start.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Egg_Task_Graph_Move_Action/success_rate.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Fried_Potatoes_Move_Action/progress.txt
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Fried_Potatoes_Move_Action/success_array.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Fried_Potatoes_Move_Action/success_per_env.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Fried_Potatoes_Move_Action/success_per_start.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Fried_Potatoes_Move_Action/success_rate.npy
+	modified:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Latte_Task_Graph_Move_Action/progress.txt
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Microwave_Potato_Move_Action/progress.txt
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Microwave_Potato_Move_Action/success_array.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Tomato_Toast_Move_Action/progress.txt
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Tomato_Toast_Move_Action/success_array.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Tomato_Toast_Move_Action/success_per_env.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Tomato_Toast_Move_Action/success_per_start.npy
+	new file:   Results/GT_History_Llama3-2-11B_Prob_MCQ_Selection_Tomato_Toast_Move_Action/success_rate.npy
+	modified:   Tasks/Make_A_BLT_0_abridged.json
+	new file:   Tasks/Make_A_Fried_Egg_0.json
+	new file:   Tasks/Make_A_Microwave_Baked_Potato_0.json
+	new file:   Tasks/Make_An_Apple_And_Peanut_Butter_Sandwich.json
+	new file:   Tasks/Make_Fried_Potatoes_0.json
+	new file:   Tasks/Make_Tomato_Toast_0.json
+	new file:   drive-download-20250115T232003Z-001.zip
+	new file:   make_an egg_0.mp4
+	new file:   make_fried_potatoes_0.mp4
+	modified:   out.txt
+	modified:   utils.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	gitdump.txt
+

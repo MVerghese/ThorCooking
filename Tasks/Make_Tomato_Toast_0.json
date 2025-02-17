@@ -1,0 +1,197 @@
+{
+	"goal_object_name":"Plate",
+	"goal_object_type":"Plate",
+	"video_path":"/home/mverghese/ThorCooking/Videos/make_tomato_toast_0.mp4",
+	"task_graph_path":"/home/mverghese/ThorCooking/Fried_Egg_Task_Graph.json",
+	"thor_objects":["StoveKnob","StoveBurner","Pan","Tomato","Plate","Bread"],
+	"thor_object_success_condition":[
+		{
+			"object":"Plate",
+			"relation":"receptacle_contains",
+			"arguments":["Bread"]
+		},
+		{
+			"object":"Bread",
+			"relation":"sliced",
+			"arguments":[true]
+		},
+		{
+			"object":"Tomato",
+			"relation":"sliced",
+			"arguments":[true]
+		},
+		{
+			"object": "BreadSliced",
+			"relation": "cooked",
+			"arguments": [true]
+		}
+	],
+	"pre_task_actions":[
+		{
+			"action": "MoveObject",
+			"heldObjectType": "Pan",
+			"objectType": "StoveBurner"
+		},
+		{
+			"action": "ToggleObjectOn",
+			"objectType": "StoveKnob"
+		},
+		{
+			"action": "SliceObject",
+			"objectType": "Bread"
+		}
+	],
+	"action_segments":[
+		{
+			"action_text":"take out sliced bread and put it on the countertop",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"BreadSliced",
+			"thor_object":true,
+			"start_frame":0,
+			"end_frame":397 
+		},
+		{
+			"action_text":"move the sliced bread to the pan",
+			"action":"MoveObject",
+			"object":"Pan",
+			"held_object":"BreadSliced",
+			"thor_object":true,
+			"start_frame":398,
+			"end_frame":807 
+		},
+		{
+			"action_text":"take out tomatoes from the fridge and put them on the countertop",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"Tomato",
+			"thor_object":true,
+			"start_frame":808,
+			"end_frame":1507 
+		},
+		{
+			"action_text":"pick up tomatoes",
+			"action":"PickupObject",
+			"object":"Tomato",
+			"thor_object":true,
+			"start_frame":1508,
+			"end_frame":2033 
+		},
+		{
+			"action_text":"turn on faucet",
+			"action":"ToggleObjectOn",
+			"object":"Faucet",
+			"thor_object":true,
+			"start_frame":2034,
+			"end_frame":2050
+		},
+		{
+			"action_text":"put tomatoes in sink",
+			"action":"PutObject",
+			"object":"SinkBasin",
+			"thor_object":true,
+			"start_frame":2050,
+			"end_frame":2117
+		},
+		{
+			"action_text":"turn off faucet",
+			"action":"ToggleObjectOff",
+			"object":"Faucet",
+			"thor_object":true,
+			"start_frame":2118,
+			"end_frame":2165
+		},
+		{
+			"action_text":"move tomatoes to the countertop",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"Tomato",
+			"thor_object":true,
+			"start_frame":2166,
+			"end_frame":2282
+		},
+		{
+			"action_text":"slice tomatoes",
+			"action":"SliceObject",
+			"object":"Tomato",
+			"thor_object":true,
+			"start_frame":2283,
+			"end_frame":3772
+		},
+		{
+			"action_text":"sprinkle salt on tomatoes",
+			"action":"AddObject",
+			"object":"Salt",
+			"thor_object":false,
+			"start_frame":3773,
+			"end_frame":4581
+		},
+		{
+			"action_text":"grind pepper on tomatoes",
+			"action":"AddObject",
+			"object":"Pepper",
+			"thor_object":false,
+			"start_frame":4582,
+			"end_frame":5172
+		},
+		{
+			"action_text":"wash hands",
+			"action":"CleanObject",
+			"object":"User",
+			"thor_object":false,
+			"start_frame":5173,
+			"end_frame":5269
+		},
+		{
+			"action_text":"move the toasted bread to countertop",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"BreadSliced",
+			"thor_object":true,
+			"start_frame":5270,
+			"end_frame":6920
+		},
+		{
+			"action_text":"spread mayonnaise on the toasted bread",
+			"action":"SpreadObject",
+			"object":"BreadSliced",
+			"thor_object":false,
+			"start_frame":6921,
+			"end_frame":7327
+		},
+		{
+			"action_text":"move toasted bread to a plate",
+			"action":"MoveObject",
+			"object":"Plate",
+			"held_object":"BreadSliced",
+			"thor_object":true,
+			"start_frame":7327,
+			"end_frame":7328
+		},
+		{
+			"action_text":"put the tomatoes on the bread",
+			"action":"MoveObject",
+			"object":"Plate",
+			"held_object":"TomatoSliced",
+			"thor_object":true,
+			"start_frame":7329,
+			"end_frame":7725
+		}
+
+
+	],
+	"valid_start_indexes":[1,2,8,14,16],
+	"compatible_environments":[1, 2, 3, 5, 7, 8, 9, 10, 11, 16, 18, 19, 20, 23, 25, 26],
+	"additional_segments":[
+		{
+			"action_text":"season tomatoes",
+			"action":"AddObject",
+			"object":"Salt",
+			"thor_object":false,
+			"start_frame":3773,
+			"end_frame":5172
+		}
+	]
+
+
+}

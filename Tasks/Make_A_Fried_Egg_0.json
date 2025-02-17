@@ -1,0 +1,189 @@
+{
+	"goal_object_name":"Plate",
+	"goal_object_type":"Plate",
+	"video_path":"/home/mverghese/ThorCooking/Videos/make_a_fried_egg_0.mp4",
+	"task_graph_path":"/home/mverghese/ThorCooking/Fried_Egg_Task_Graph.json",
+	"thor_objects":["StoveKnob","StoveBurner","Pan","Egg","Plate"],
+	"thor_object_success_condition":[
+		{
+			"object":"Plate",
+			"relation":"receptacle_contains",
+			"arguments":["Egg"]
+		},
+		{
+			"object":"Egg",
+			"relation":"broken",
+			"arguments":[true]
+		},
+		{
+			"object":"EggCracked",
+			"relation":"cooked",
+			"arguments":[true]
+		}
+	],
+	"pre_task_actions":[
+		{
+			"action": "MoveObject",
+			"heldObjectType": "Pan",
+			"objectType": "StoveBurner"
+		}
+	],
+	"action_segments":[
+		{
+			"action_text":"turn on stove",
+			"action":"ToggleObjectOn",
+			"object":"StoveKnob",
+			"thor_object":true,
+			"start_frame":0,
+			"end_frame":257 
+		},
+		{
+			"action_text":"put oil in the pan",
+			"action":"MoveObject",
+			"object":"Oil",
+			"thor_object":false,
+			"start_frame":258,
+			"end_frame":876 
+		},
+		{
+			"action_text":"take out egg carton from fridge",
+			"action":"MoveObject",
+			"object":"EggCarton",
+			"thor_object":false,
+			"start_frame":877,
+			"end_frame":1219 
+		},
+		{
+			"action_text":"put an egg on the counter",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object": "Egg",
+			"thor_object":true,
+			"start_frame":1220,
+			"end_frame":1362 
+		},
+		{
+			"action_text":"put egg carton back in the fridge",
+			"action":"MoveObject",
+			"object":"Egg",
+			"thor_object":false,
+			"start_frame":1363,
+			"end_frame":1630
+		},
+		{
+			"action_text":"move egg over pan",
+			"action":"MoveObject",
+			"object":"Pan",
+			"held_object": "Egg",
+			"thor_object":true,
+			"start_frame":2979,
+			"end_frame":3220
+		},
+		{
+			"action_text":"crack egg",
+			"action":"BreakObject",
+			"object":"Egg",
+			"thor_object":true,
+			"start_frame":3221,
+			"end_frame":3394
+		},
+		{
+			"action_text":"throw away egg shells",
+			"action":"MoveObject",
+			"object":"Egg",
+			"thor_object":false,
+			"start_frame":3395,
+			"end_frame":3625
+		},
+		{
+			"action_text":"add salt to egg",
+			"action":"AddObject",
+			"object":"Salt",
+			"thor_object":false,
+			"start_frame":3626,
+			"end_frame":3953
+		},
+		{
+			"action_text":"add pepper to egg",
+			"action":"AddObject",
+			"object":"Pepper",
+			"thor_object":false,
+			"start_frame":3954,
+			"end_frame":4371
+		},
+		{
+			"action_text":"cook egg",
+			"action":"CookObject",
+			"object":"EggCracked",
+			"thor_object":false,
+			"start_frame":4372,
+			"end_frame":6676
+		},
+		{
+			"action_text":"flip egg",
+			"action":"FlipObject",
+			"object":"EggCracked",
+			"thor_object":false,
+			"start_frame":6677,
+			"end_frame":7181
+		},
+		{
+			"action_text":"cook egg",
+			"action":"CookObject",
+			"object":"EggCracked",
+			"thor_object":false,
+			"start_frame":4372,
+			"end_frame":10693
+		},
+		{
+			"action_text":"take plate from cupboard",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"Plate",
+			"thor_object":true,
+			"start_frame":10694,
+			"end_frame":10844
+		},
+		{
+			"action_text":"transfer egg to plate",
+			"action":"MoveObject",
+			"object":"Plate",
+			"held_object":"EggCracked",
+			"thor_object":true,
+			"start_frame":10694,
+			"end_frame":11083
+		}
+
+
+	],
+	"valid_start_indexes":[3,5,6,13,14,15],
+	"compatible_environments":[2,3,9,13,15,25],
+	"additional_segments":[
+		{
+			"action_text":"gett egg from fridge",
+			"action":"MoveObject",
+			"object":"Egg",
+			"thor_object":false,
+			"start_frame":877,
+			"end_frame":1630 
+		},
+		{
+			"action_text":"crack egg into pan",
+			"action":"BreakObject",
+			"object":"Egg",
+			"thor_object":false,
+			"start_frame":2979,
+			"end_frame":3394 
+		},
+		{
+			"action_text":"season egg",
+			"action":"AddObject",
+			"object":"Salt",
+			"thor_object":false,
+			"start_frame":3626,
+			"end_frame":4371 
+		}
+	]
+
+
+}

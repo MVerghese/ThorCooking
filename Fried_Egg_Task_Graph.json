@@ -1,0 +1,14 @@
+{
+	"turn on stove": ["put pan on stove", "put oil in the pan", "put butter in pan", "crack egg in pan", "move egg to pan"],
+	"move pan to stove": ["put oil in the pan", "put butter in pan", "crack egg in pan", "move egg to pan", "turn on stove"],
+	"put oil in pan": ["crack egg in pan", "move egg to pan", "tun on stove"],
+	"put butter in pan": ["crack egg in pan", "move egg to pan", "turn on stove"],
+	"crack egg in pan": ["move egg to pan", "turn on stove", "add salt to egg", "add pepper to egg", "season egg", "flip egg", "cook egg"],
+	"move egg to pan": ["crack egg in pan", "turn on stove"],
+	"add salt to egg": ["add pepper to egg", "season egg", "flip egg", "cook egg"],
+	"add pepper to egg": ["add salt to egg", "season egg", "flip egg", "cook egg"],
+	"season egg": ["flip egg", "cook egg", "put egg on plate"],
+	"flip egg": ["cook egg", "put egg on plate", "add salt to egg", "add pepper to egg", "season egg"],
+	"cook egg": ["flip egg", "put egg on plate", "add salt to egg", "add pepper to egg", "season egg"],
+	"put egg on plate": ["add salt to egg", "add pepper to egg", "season egg"]
+}

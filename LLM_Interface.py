@@ -335,7 +335,7 @@ class transformers_interface:
 		messages = [
 			{
 				"role": "system",
-				"content": "You are an assitant designed to help people with household tasks. Do not be verbose. Answer the question with no added qualifications or caveats. Just directly provide the answer.",
+				"content": "You are an assistant designed to help people with household tasks. Do not be verbose. Answer the question with no added qualifications or caveats. Just directly provide the answer.",
 			},
 			{
 				"role": "user",
@@ -398,7 +398,7 @@ class transformers_interface:
 		messages = [
 			{
 				"role": "system",
-				"content": "You are an assitant designed to help people with household tasks. Do not be verbose. Answer the question with no added qualifications or caveats. Just directly provide the answer.",
+				"content": "You are an assistant designed to help people with household tasks. Do not be verbose. Answer the question with no added qualifications or caveats. Just directly provide the answer.",
 			},
 			{
 				"role": "user",

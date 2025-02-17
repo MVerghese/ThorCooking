@@ -76,20 +76,19 @@ def compute_entropy(probabilities):
 
 
 if __name__ == "__main__":
-    # paths = ["Videos/53_video_492_0_none_display.mp4",
-    # 		 "Videos/54_video_502_0_none_display.mp4",
-    # 		 "Videos/55_video_496_0_none_display.mp4",
-    # 		 "Videos/56_video_504_0_none_display.mp4",
-    # 		 "Videos/57_video_490_0_none_display.mp4",
-    # 		 "Videos/71_video_640_0_none_display.mp4",
-    # 		 "Videos/72_video_646_0_none_display.mp4",
-    # 		 "Videos/73_video_648_0_none_display.mp4",
-    # 		 "Videos/74_video_650_0_none_display.mp4",
-    # 		 "Videos/75_video_634_0_none_display.mp4",
-    # 		 ]
-    # combine_videos(paths,[0,1,2],"make_a_blt_0.mp4")
-    # combine_videos(paths,[0,3,4],"make_a_blt_1.mp4")
-    # combine_videos(paths,[5,6,7,8,9],"make_a_latte_0.mp4")
+    paths = ["/home/mverghese/ThorCooking/Videos/91_video_814_0_none_display.mp4",
+    		 "/home/mverghese/ThorCooking/Videos/92_video_802_0_none_display.mp4",
+    		 "/home/mverghese/ThorCooking/Videos/93_video_806_0_none_display.mp4",
+    		 "/home/mverghese/ThorCooking/Videos/94_video_798_0_none_display.mp4",
+    		 "/home/mverghese/ThorCooking/Videos/95_video_810_0_none_display.mp4",
+    		 ]
+    combine_videos(paths,[0,1],"make_an_apple_and_peanut_butter_sandwich_0.mp4")
+    combine_videos(paths,[2],"wash_a_dishes_0.mp4")
+    combine_videos(paths,[3],"put_away_dishes_0.mp4")
+    combine_videos(paths,[4],"make_a_salad_0.mp4")
+
+
+    1/0
     narration_path = "cross_task_vpa_summarized.jsonl"
     with open(narration_path, "r") as file:
         narration_list = file.readlines()

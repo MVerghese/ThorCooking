@@ -1,0 +1,184 @@
+{
+	"goal_object_name":"Plate",
+	"goal_object_type":"Plate",
+	"video_path":"/home/mverghese/ThorCooking/Videos/make_fried_potatoes_0.mp4",
+	"task_graph_path":"/home/mverghese/ThorCooking/Fried_Egg_Task_Graph.json",
+	"thor_objects":["StoveKnob","StoveBurner","Pan","Egg","Plate"],
+	"thor_object_success_condition":[
+		{
+			"object":"Plate",
+			"relation":"receptacle_contains",
+			"arguments":["Potato"]
+		},
+		{
+			"object":"Potato",
+			"relation":"sliced",
+			"arguments":[true]
+		},
+		{
+			"object":"PotatoSliced",
+			"relation":"cooked",
+			"arguments":[true]
+		}
+
+	],
+	"pre_task_actions":[
+	],
+	"action_segments":[
+		{
+			"action_text":"turn on stove",
+			"action":"ToggleObjectOn",
+			"object":"StoveKnob",
+			"thor_object":true,
+			"start_frame":0,
+			"end_frame":133 
+		},
+		{
+			"action_text":"put the pan on the stove",
+			"action":"MoveObject",
+			"object":"StoveBurner",
+			"held_object":"Pan",
+			"thor_object":true,
+			"start_frame":134,
+			"end_frame":230 
+		},
+		{
+			"action_text":"put oil in the pan",
+			"action":"MoveObject",
+			"object":"Oil",
+			"thor_object":false,
+			"start_frame":231,
+			"end_frame":660 
+		},
+		{
+			"action_text":"put the potatoes on the counter",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object": "Potato",
+			"thor_object":true,
+			"start_frame":661,
+			"end_frame":962  
+		},
+		{
+			"action_text":"open the bag of potatoes",
+			"action":"OpenObject",
+			"object":"PotatoBag",
+			"thor_object":false,
+			"start_frame":963,
+			"end_frame":1137
+		},
+		{
+			"action_text":"pick up potato",
+			"action":"PickupObject",
+			"object":"Potato",
+			"thor_object":true,
+			"start_frame":1137,
+			"end_frame":1410
+		},
+		{
+			"action_text":"turn on faucet",
+			"action":"ToggleObjectOn",
+			"object":"Faucet",
+			"thor_object":true,
+			"start_frame":1411,
+			"end_frame":1430
+		},
+		{
+			"action_text":"put potatoes in the sink",
+			"action":"PutObject",
+			"object":"SinkBasin",
+			"thor_object":true,
+			"start_frame":1431,
+			"end_frame":1570
+		},
+		{
+			"action_text":"turn off faucet",
+			"action":"ToggleObjectOff",
+			"object":"Faucet",
+			"thor_object":true,
+			"start_frame":1571,
+			"end_frame":1601
+		},
+		{
+			"action_text":"move potatoes to the counter",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"Potato",
+			"thor_object":true,
+			"start_frame":1602,
+			"end_frame":1917
+		},
+		{
+			"action_text":"slice potatoes",
+			"action":"SliceObject",
+			"object":"Potato",
+			"thor_object":true,
+			"start_frame":1918,
+			"end_frame":5240
+		},
+		{
+			"action_text":"move sliced potatoes to the pan",
+			"action":"MoveObject",
+			"object":"Pan",
+			"held_object":"PotatoSliced",
+			"thor_object":true,
+			"start_frame":5241,
+			"end_frame":6465
+		},
+		{
+			"action_text":"stir the potatoes",
+			"action":"StirObject",
+			"object":"PotatoSliced",
+			"thor_object":false,
+			"start_frame":6466,
+			"end_frame":7236
+		},
+		{
+			"action_text":"add salt to the potatoes",
+			"action":"AddObject",
+			"object":"Salt",
+			"thor_object":false,
+			"start_frame":7236,
+			"end_frame":7658
+		},
+		{
+			"action_text":"cook the potatoes",
+			"action":"CookObject",
+			"object":"PotatoSliced",
+			"thor_object":false,
+			"start_frame":7659,
+			"end_frame":11446
+		},
+		{
+			"action_text":"turn off stove",
+			"action":"ToggleObjectOff",
+			"object":"StoveKnob",
+			"thor_object":true,
+			"start_frame":11447,
+			"end_frame":11567
+		},
+		{
+			"action_text":"move potatoes to plate",
+			"action":"MoveObject",
+			"object":"Plate",
+			"held_object":"PotatoSliced",
+			"thor_object":true,
+			"start_frame":11568,
+			"end_frame":12520
+		}
+	],
+	"valid_start_indexes":[1,3,9,11,17],
+	"compatible_environments":[1, 2, 3, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 18, 19, 20, 26, 28, 30],
+	"additional_segments":[
+		{
+			"action_text":"wash potatoes",
+			"action":"CleanObject",
+			"object":"Potato",
+			"thor_object":false,
+			"start_frame":1431,
+			"end_frame":1917
+		}
+	]
+
+
+}

@@ -1,0 +1,156 @@
+{
+	"goal_object_name":"Sandwich",
+	"goal_object_type":"Plate",
+	"video_path":"/home/mverghese/ThorCooking/Videos/make_an_apple_and_peanut_butter_sandwich_0.mp4",
+	"task_graph_path":"/home/mverghese/ThorCooking/Fried_Egg_Task_Graph.json",
+	"thor_objects":["Bread","Apple","Plate"],
+	"fake_objects":[
+		{
+			"objectType":"PeanutButter",
+			"pickupable":true,
+			"receptacle":false,
+			"openable":false,
+			"cookable":false,
+			"sliceable":false,
+			"toggleable":false,
+			"breakable":false
+		}
+	],
+	"thor_object_success_condition":[
+		{
+			"object":"Plate",
+			"relation":"receptacle_contains",
+			"arguments":["Bread"]
+		},
+		{
+			"object":"Plate",
+			"relation":"receptacle_contains",
+			"arguments":["AppleSliced"]
+		},
+		{
+			"object":"Bread",
+			"relation":"sliced",
+			"arguments":[true]
+		},
+		{
+			"object":"Apple",
+			"relation":"sliced",
+			"arguments":[true]
+		},
+		{
+			"object":"PeanutButter",
+			"relation":"receptacle_parent",
+			"arguments":["Plate"]
+		}
+	],
+	"pre_task_actions":[
+		{
+			"action": "SliceObject",
+			"objectType": "Bread"
+		}
+	],
+	"action_segments":[
+		{
+			"action_text":"take out a plate and put it on the countertop",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"Plate",
+			"thor_object":true,
+			"start_frame":0,
+			"end_frame":387 
+		},
+		{
+			"action_text":"move the sliced bread to the countertop",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"BreadSliced",
+			"thor_object":true,
+			"start_frame":388,
+			"end_frame":841 
+		},
+		{
+			"action_text":"move the sliced bread to the plate",
+			"action":"MoveObject",
+			"object":"Plate",
+			"held_object":"BreadSliced",
+			"thor_object":true,
+			"start_frame":842,
+			"end_frame":1002 
+		},
+		{
+			"action_text":"take out the peanut butter from the fridge and put it on the countertop",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"PeanutButter",
+			"thor_object":true,
+			"start_frame":1003,
+			"end_frame":1528 
+		},
+		{
+			"action_text":"take out an apple and put it on the coutner",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"Apple",
+			"thor_object":true,
+			"start_frame":1529,
+			"end_frame":1744
+		},
+		{
+			"action_text":"cut and core apple",
+			"action":"SliceObject",
+			"object":"Apple",
+			"thor_object":false,
+			"start_frame":1745,
+			"end_frame":2725
+		},
+		{
+			"action_text":"add peanut butter to the sandwich",
+			"action":"AddObject",
+			"object":"PeanutButter",
+			"thor_object":true,
+			"start_frame":2726,
+			"end_frame":3812
+		},
+		{
+			"action_text":"slice apple",
+			"action":"SliceObject",
+			"object":"Apple",
+			"held_object":"Tomato",
+			"thor_object":true,
+			"start_frame":3813,
+			"end_frame":5192
+		},
+		{
+			"action_text":"add sliced apples to the sandwich",
+			"action":"AddObject",
+			"object":"AppleSliced",
+			"thor_object":true,
+			"start_frame":5193,
+			"end_frame":5487
+		},
+		{
+			"action_text":"add more peanut butter to the sandwich",
+			"action":"AddObject",
+			"object":"PeanutButter",
+			"thor_object":false,
+			"start_frame":5488,
+			"end_frame":6436
+		},
+		{
+			"action_text":"add more sliced apples to the sandwich",
+			"action":"AddObject",
+			"object":"AppleSliced",
+			"thor_object":false,
+			"start_frame":6437,
+			"end_frame":6830
+		}
+
+
+	],
+	"valid_start_indexes":[2,6,7,8,11],
+	"compatible_environments":[],
+	"additional_segments":[
+	]
+
+
+}

@@ -1,0 +1,215 @@
+{
+	"goal_object_name":"Plate",
+	"goal_object_type":"Plate",
+	"video_path":"/home/mverghese/ThorCooking/Videos/make_a_microwave_baked_potato_0.mp4",
+	"task_graph_path":"/home/mverghese/ThorCooking/Fried_Egg_Task_Graph.json",
+	"thor_objects":["Microwave","Potato","Plate"],
+	"banlist_objects": ["StoveBurner", "StoveKnob", "Pan"],
+	"thor_object_success_condition":[
+		{
+			"object":"Plate",
+			"relation":"receptacle_contains",
+			"arguments":["Potato"]
+		},
+		{
+			"object":"Potato",
+			"relation":"cooked",
+			"arguments":[true]
+		}
+	],
+	"pre_task_actions":[
+	],
+	"action_segments":[
+		{
+			"action_text":"take out potatoes from the cupboard and put them on the countertop",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"Potato",
+			"thor_object":true,
+			"start_frame":1195,
+			"end_frame":1385 
+		},
+		{
+			"action_text":"take out a plate from the cupboard and put it on the countertop",
+			"action":"MoveObject",
+			"object":"CounterTop",
+            "held_object":"Plate",
+			"thor_object":true,
+			"start_frame":1386,
+			"end_frame":1636 
+		},
+		{
+			"action_text":"pick up a potato",
+			"action":"PickupObject",
+			"object":"Potato",
+			"thor_object":true,
+			"start_frame":1637,
+			"end_frame":1811
+		},
+        {
+			"action_text":"turn on faucet",
+			"action":"ToggleObjectOn",
+			"object":"Faucet",
+			"thor_object":true,
+			"start_frame":1812,
+			"end_frame":1869
+		},
+		{
+			"action_text":"put potato in sink",
+			"action":"PutObject",
+			"object":"SinkBasin",
+			"thor_object":true,
+			"start_frame":1870,
+			"end_frame":1890
+		},
+        {
+            "action_text":"wash potato",
+            "action":"CleanObject",
+            "object":"Potato",
+            "thor_object":false,
+            "start_frame":1891,
+            "end_frame":2187
+        },
+		{
+			"action_text":"turn off faucet",
+			"action":"ToggleObjectOff",
+			"object":"Faucet",
+			"thor_object":true,
+			"start_frame":2188,
+			"end_frame":2210
+		},
+		{
+			"action_text":"move potato to the countertop",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"Tomato",
+			"thor_object":true,
+			"start_frame":2211,
+			"end_frame":2687
+		},
+		{
+			"action_text":"pickup fork",
+			"action":"PickupObject",
+			"object":"Fork",
+			"thor_object":true,
+			"start_frame":2688,
+			"end_frame":2897
+		},
+		{
+			"action_text":"poke holes in the potato",
+			"action":"Pokeobject",
+			"object":"Potato",
+			"thor_object":false,
+			"start_frame":2898,
+			"end_frame":3389
+		},
+		{
+			"action_text":"put the fork down",
+			"action":"PutObject",
+			"object":"CounterTop",
+			"thor_object":true,
+			"start_frame":3390,
+			"end_frame":3416
+		},
+		{
+			"action_text":"move the potato to the plate",
+			"action":"MoveObject",
+			"object":"Plate",
+            "held_object":"Potato",
+			"thor_object":true,
+			"start_frame":3417,
+			"end_frame":3450
+		},
+		{
+			"action_text":"pickup the plate",
+			"action":"PickupObject",
+			"object":"Plate",
+			"thor_object":true,
+			"start_frame":3451,
+			"end_frame":3495
+		},
+		{
+			"action_text":"open the microwave",
+			"action":"OpenObject",
+			"object":"Microwave",
+			"thor_object":true,
+			"start_frame":3496,
+			"end_frame":3528
+		},
+		{
+			"action_text":"put the plate in the microwave",
+			"action":"PutObject",
+			"object":"Microwave",
+			"thor_object":true,
+			"start_frame":3529,
+			"end_frame":3576
+		},
+		{
+			"action_text":"close the microwave",
+			"action":"CloseObject",
+			"object":"Microwave",
+			"thor_object":true,
+			"start_frame":3577,
+			"end_frame":3606
+		},
+        {
+			"action_text":"turn on the microwave",
+			"action":"ToggleObjectOn",
+			"object":"Microwave",
+			"thor_object":true,
+			"start_frame":3607,
+			"end_frame":3720
+		},
+		{
+			"action_text":"wait for the microwave to finish",
+			"action":"Wait",
+			"object":"Microwave",
+			"thor_object":false,
+			"start_frame":3721,
+			"end_frame":3920
+		},
+		{
+			"action_text":"open the microwave",
+			"action":"OpenObject",
+			"object":"Microwave",
+			"thor_object":true,
+			"start_frame":3921,
+			"end_frame":4002
+		},
+		{
+			"action_text":"take out the plate with the potato and put it on the counter",
+			"action":"MoveObject",
+			"object":"CounterTop",
+			"held_object":"Plate",
+			"thor_object":true,
+			"start_frame":4003,
+			"end_frame":4427
+		}
+
+
+
+	],
+	"valid_start_indexes":[2,11,13,16,20],
+	"compatible_environments":[4, 5, 13, 16, 19, 23, 28, 29],
+	"additional_segments":[
+		{
+			"action_text":"put bacon in the pan",
+			"action":"MoveObject",
+			"object":"Pan",
+			"held_object":"Bacon",
+			"thor_object":false,
+			"start_frame":0,
+			"end_frame":457 
+		},
+		{
+			"action_text":"cook bacon",
+			"action":"CookObject",
+			"object":"Bacon",
+			"thor_object":false,
+			"start_frame":458,
+			"end_frame":1194 
+		}
+	]
+
+
+}

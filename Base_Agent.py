@@ -243,9 +243,9 @@ class Base_Agent:
 			initial_action_probs = np.ones(len(action_list))
 
 		if verbose:
-			print("Candidate action rankings")
-			for i in top_action_idxs:
-				print("Action: ", action_list[i], "Prob: ", initial_action_probs[i])
+			# print("Candidate action rankings")
+			# for i in top_action_idxs:
+			# 	print("Action: ", action_list[i], "Prob: ", initial_action_probs[i])
 			print("Candidate Actions: ", candidate_actions)
 
 		prompt = self.build_prompt(task,history,examples,mode="mcq",last_failed_action=last_failed_action,additional_prompt=additional_prompt,  use_few_shot_examples = False)
